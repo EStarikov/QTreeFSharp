@@ -1,11 +1,7 @@
 module Graph.Boruvka.Tests
 
-open System
 open Xunit
-
 open Matrix
-open Vector
-open Common
 
 let checkResult name actual expected =
     match actual with
@@ -20,11 +16,11 @@ let checkResult name actual expected =
                 | _ -> None)
 
         Assert.Equal(expected, actual)
-    | x -> Assert.Fail(sprintf "Boruvka failed: %A" x)
+    | x -> Assert.Fail(sprintf "MST failed: %A" x)
 
-[<Fact>]
-let ``Boruvka MST 2 nodes.`` () =
+// ============== Shared test data ==============
 
+let private ``test 2 nodes`` () =
     let graph =
         let clist =
             Matrix.CoordinateList(
@@ -35,22 +31,9 @@ let ``Boruvka MST 2 nodes.`` () =
 
         Matrix.fromCoordinateList clist
 
-    let expected =
-        let clist =
-            Matrix.CoordinateList(
-                2UL<nrows>,
-                2UL<ncols>,
-                [ 0UL<rowindex>, 1UL<colindex>, 5UL; 1UL<rowindex>, 0UL<colindex>, 5UL ]
-            )
+    graph, Ok graph
 
-        Matrix.fromCoordinateList clist |> Ok
-
-    checkResult (Graph.Boruvka.mst graph) expected
-
-
-[<Fact>]
-let ``Boruvka MST 3 nodes line.`` () =
-
+let private ``test 3 nodes line`` () =
     let graph =
         let clist =
             Matrix.CoordinateList(
@@ -64,26 +47,9 @@ let ``Boruvka MST 3 nodes line.`` () =
 
         Matrix.fromCoordinateList clist
 
-    let expected =
-        let clist =
-            Matrix.CoordinateList(
-                3UL<nrows>,
-                3UL<ncols>,
-                [ 0UL<rowindex>, 1UL<colindex>, 1UL
-                  1UL<rowindex>, 0UL<colindex>, 1UL
-                  1UL<rowindex>, 2UL<colindex>, 2UL
-                  2UL<rowindex>, 1UL<colindex>, 2UL ]
-            )
+    graph, Ok graph
 
-        Matrix.fromCoordinateList clist |> Ok
-
-    checkResult (Graph.Boruvka.mst graph) expected
-
-
-
-[<Fact>]
-let ``Boruvka MST 4 nodes line.`` () =
-
+let private ``test 4 nodes line`` () =
     let graph =
         let clist =
             Matrix.CoordinateList(
@@ -99,27 +65,9 @@ let ``Boruvka MST 4 nodes line.`` () =
 
         Matrix.fromCoordinateList clist
 
-    let expected =
-        let clist =
-            Matrix.CoordinateList(
-                4UL<nrows>,
-                4UL<ncols>,
-                [ 0UL<rowindex>, 1UL<colindex>, 1UL
-                  1UL<rowindex>, 0UL<colindex>, 1UL
-                  1UL<rowindex>, 2UL<colindex>, 2UL
-                  2UL<rowindex>, 1UL<colindex>, 2UL
-                  2UL<rowindex>, 3UL<colindex>, 3UL
-                  3UL<rowindex>, 2UL<colindex>, 3UL ]
-            )
+    graph, Ok graph
 
-        Matrix.fromCoordinateList clist |> Ok
-
-    checkResult (Graph.Boruvka.mst graph) expected
-
-
-[<Fact>]
-let ``Boruvka MST 5 nodes line.`` () =
-
+let private ``test 5 nodes line`` () =
     let graph =
         let clist =
             Matrix.CoordinateList(
@@ -137,29 +85,9 @@ let ``Boruvka MST 5 nodes line.`` () =
 
         Matrix.fromCoordinateList clist
 
-    let expected =
-        let clist =
-            Matrix.CoordinateList(
-                5UL<nrows>,
-                5UL<ncols>,
-                [ 0UL<rowindex>, 1UL<colindex>, 1UL
-                  1UL<rowindex>, 0UL<colindex>, 1UL
-                  1UL<rowindex>, 2UL<colindex>, 2UL
-                  2UL<rowindex>, 1UL<colindex>, 2UL
-                  2UL<rowindex>, 3UL<colindex>, 3UL
-                  3UL<rowindex>, 2UL<colindex>, 3UL
-                  3UL<rowindex>, 4UL<colindex>, 4UL
-                  4UL<rowindex>, 3UL<colindex>, 4UL ]
-            )
+    graph, Ok graph
 
-        Matrix.fromCoordinateList clist |> Ok
-
-    checkResult (Graph.Boruvka.mst graph) expected
-
-
-[<Fact>]
-let ``Boruvka MST 5 nodes star.`` () =
-
+let private ``test 5 nodes star`` () =
     let graph =
         let clist =
             Matrix.CoordinateList(
@@ -177,29 +105,9 @@ let ``Boruvka MST 5 nodes star.`` () =
 
         Matrix.fromCoordinateList clist
 
-    let expected =
-        let clist =
-            Matrix.CoordinateList(
-                5UL<nrows>,
-                5UL<ncols>,
-                [ 0UL<rowindex>, 1UL<colindex>, 5UL
-                  1UL<rowindex>, 0UL<colindex>, 5UL
-                  0UL<rowindex>, 2UL<colindex>, 4UL
-                  2UL<rowindex>, 0UL<colindex>, 4UL
-                  0UL<rowindex>, 3UL<colindex>, 3UL
-                  3UL<rowindex>, 0UL<colindex>, 3UL
-                  0UL<rowindex>, 4UL<colindex>, 2UL
-                  4UL<rowindex>, 0UL<colindex>, 2UL ]
-            )
+    graph, Ok graph
 
-        Matrix.fromCoordinateList clist |> Ok
-
-    checkResult (Graph.Boruvka.mst graph) expected
-
-
-[<Fact>]
-let ``Boruvka MST 5 nodes complete.`` () =
-
+let private ``test 5 nodes complete`` () =
     let graph =
         let clist =
             Matrix.CoordinateList(
@@ -246,12 +154,9 @@ let ``Boruvka MST 5 nodes complete.`` () =
 
         Matrix.fromCoordinateList clist |> Ok
 
-    checkResult (Graph.Boruvka.mst graph) expected
+    graph, expected
 
-
-[<Fact>]
-let ``Boruvka MST two components.`` () =
-
+let private ``test two components`` () =
     let graph =
         let clist =
             Matrix.CoordinateList(
@@ -293,12 +198,9 @@ let ``Boruvka MST two components.`` () =
 
         Matrix.fromCoordinateList clist |> Ok
 
-    checkResult (Graph.Boruvka.mst graph) expected
+    graph, expected
 
-
-[<Fact>]
-let ``Boruvka MST cycle graph 6 nodes.`` () =
-
+let private ``test cycle graph 6 nodes`` () =
     let graph =
         let clist =
             Matrix.CoordinateList(
@@ -339,11 +241,9 @@ let ``Boruvka MST cycle graph 6 nodes.`` () =
 
         Matrix.fromCoordinateList clist |> Ok
 
-    checkResult (Graph.Boruvka.mst graph) expected
+    graph, expected
 
-[<Fact>]
-let ``Boruvka MST complete bipartite K3,3.`` () =
-
+let private ``test complete bipartite K3,3`` () =
     let graph =
         let clist =
             Matrix.CoordinateList(
@@ -400,11 +300,9 @@ let ``Boruvka MST complete bipartite K3,3.`` () =
 
         Matrix.fromCoordinateList clist |> Ok
 
-    checkResult (Graph.Boruvka.mst graph) expected
+    graph, expected
 
-[<Fact>]
-let ``Boruvka MST random weights.`` () =
-
+let private ``test random weights`` () =
     let graph =
         let clist =
             Matrix.CoordinateList(
@@ -466,11 +364,9 @@ let ``Boruvka MST random weights.`` () =
 
         Matrix.fromCoordinateList clist |> Ok
 
-    checkResult (Graph.Boruvka.mst graph) expected
+    graph, expected
 
-[<Fact>]
-let ``Boruvka MST 8 nodes grid.`` () =
-
+let private ``test 8 nodes grid`` () =
     let graph =
         let clist =
             Matrix.CoordinateList(
@@ -527,11 +423,9 @@ let ``Boruvka MST 8 nodes grid.`` () =
 
         Matrix.fromCoordinateList clist |> Ok
 
-    checkResult (Graph.Boruvka.mst graph) expected
+    graph, expected
 
-[<Fact>]
-let ``Boruvka MST 10 nodes random.`` () =
-
+let private ``test 10 nodes random`` () =
     let graph =
         let clist =
             Matrix.CoordinateList(
@@ -567,47 +461,9 @@ let ``Boruvka MST 10 nodes random.`` () =
 
         Matrix.fromCoordinateList clist
 
-    let expected =
-        let clist =
-            Matrix.CoordinateList(
-                10UL<nrows>,
-                10UL<ncols>,
-                [ 0UL<rowindex>, 1UL<colindex>, 4UL
-                  1UL<rowindex>, 0UL<colindex>, 4UL
-                  0UL<rowindex>, 5UL<colindex>, 2UL
-                  5UL<rowindex>, 0UL<colindex>, 2UL
-                  1UL<rowindex>, 2UL<colindex>, 3UL
-                  2UL<rowindex>, 1UL<colindex>, 3UL
-                  1UL<rowindex>, 6UL<colindex>, 5UL
-                  6UL<rowindex>, 1UL<colindex>, 5UL
-                  2UL<rowindex>, 3UL<colindex>, 1UL
-                  3UL<rowindex>, 2UL<colindex>, 1UL
-                  2UL<rowindex>, 7UL<colindex>, 4UL
-                  7UL<rowindex>, 2UL<colindex>, 4UL
-                  3UL<rowindex>, 4UL<colindex>, 2UL
-                  4UL<rowindex>, 3UL<colindex>, 2UL
-                  3UL<rowindex>, 8UL<colindex>, 6UL
-                  8UL<rowindex>, 3UL<colindex>, 6UL
-                  4UL<rowindex>, 9UL<colindex>, 3UL
-                  9UL<rowindex>, 4UL<colindex>, 3UL
-                  5UL<rowindex>, 6UL<colindex>, 1UL
-                  6UL<rowindex>, 5UL<colindex>, 1UL
-                  6UL<rowindex>, 7UL<colindex>, 2UL
-                  7UL<rowindex>, 6UL<colindex>, 2UL
-                  7UL<rowindex>, 8UL<colindex>, 1UL
-                  8UL<rowindex>, 7UL<colindex>, 1UL
-                  8UL<rowindex>, 9UL<colindex>, 4UL
-                  9UL<rowindex>, 8UL<colindex>, 4UL ]
-            )
+    graph, Ok graph
 
-        Matrix.fromCoordinateList clist |> Ok
-
-    checkResult (Graph.Boruvka.mst graph) expected
-
-
-[<Fact>]
-let ``Boruvka MST simple triangle.`` () =
-
+let private ``test simple triangle`` () =
     let graph =
         let clist =
             Matrix.CoordinateList(
@@ -620,13 +476,10 @@ let ``Boruvka MST simple triangle.`` () =
                   2UL<rowindex>, 0UL<colindex>, 1UL
 
                   1UL<rowindex>, 2UL<colindex>, 1UL
-                  2UL<rowindex>, 1UL<colindex>, 1UL
-
-                  ]
+                  2UL<rowindex>, 1UL<colindex>, 1UL ]
             )
 
         Matrix.fromCoordinateList clist
-
 
     let expected =
         let clist =
@@ -642,12 +495,9 @@ let ``Boruvka MST simple triangle.`` () =
 
         Matrix.fromCoordinateList clist |> Ok
 
-    checkResult (Graph.Boruvka.mst graph) expected
+    graph, expected
 
-
-[<Fact>]
-let ``Boruvka MST simple square.`` () =
-
+let private ``test simple square`` () =
     let graph =
         let clist =
             Matrix.CoordinateList(
@@ -663,13 +513,10 @@ let ``Boruvka MST simple square.`` () =
                   3UL<rowindex>, 2UL<colindex>, 1UL
 
                   0UL<rowindex>, 3UL<colindex>, 1UL
-                  3UL<rowindex>, 0UL<colindex>, 1UL
-
-                  ]
+                  3UL<rowindex>, 0UL<colindex>, 1UL ]
             )
 
         Matrix.fromCoordinateList clist
-
 
     let expected =
         let clist =
@@ -688,14 +535,9 @@ let ``Boruvka MST simple square.`` () =
 
         Matrix.fromCoordinateList clist |> Ok
 
-    checkResult (Graph.Boruvka.mst graph) expected
+    graph, expected
 
-
-
-
-[<Fact>]
-let ``Boruvka MST simple square in two steps.`` () =
-
+let private ``test simple square in two steps`` () =
     let graph =
         let clist =
             Matrix.CoordinateList(
@@ -711,13 +553,10 @@ let ``Boruvka MST simple square in two steps.`` () =
                   3UL<rowindex>, 2UL<colindex>, 2UL
 
                   0UL<rowindex>, 3UL<colindex>, 1UL
-                  3UL<rowindex>, 0UL<colindex>, 1UL
-
-                  ]
+                  3UL<rowindex>, 0UL<colindex>, 1UL ]
             )
 
         Matrix.fromCoordinateList clist
-
 
     let expected =
         let clist =
@@ -736,14 +575,9 @@ let ``Boruvka MST simple square in two steps.`` () =
 
         Matrix.fromCoordinateList clist |> Ok
 
-    checkResult (Graph.Boruvka.mst graph) expected
+    graph, expected
 
-
-
-
-[<Fact>]
-let ``Boruvka MST.`` () =
-
+let private ``test 7 nodes`` () =
     let graph =
         let clist =
             Matrix.CoordinateList(
@@ -785,7 +619,6 @@ let ``Boruvka MST.`` () =
 
         Matrix.fromCoordinateList clist
 
-
     let expected =
         let clist =
             Matrix.CoordinateList(
@@ -807,19 +640,14 @@ let ``Boruvka MST.`` () =
                   5UL<rowindex>, 4UL<colindex>, 6UL
 
                   6UL<rowindex>, 3UL<colindex>, 8UL
-                  3UL<rowindex>, 6UL<colindex>, 8UL
-
-                  ]
+                  3UL<rowindex>, 6UL<colindex>, 8UL ]
             )
 
         Matrix.fromCoordinateList clist |> Ok
 
-    checkResult (Graph.Boruvka.mst graph) expected
+    graph, expected
 
-
-[<Fact>]
-let ``Boruvka MST big.`` () =
-
+let private ``test big`` () =
     let graph =
         let clist =
             Matrix.CoordinateList(
@@ -877,13 +705,10 @@ let ``Boruvka MST big.`` () =
                   11UL<rowindex>, 10UL<colindex>, 3UL
 
                   5UL<rowindex>, 4UL<colindex>, 3UL
-                  4UL<rowindex>, 5UL<colindex>, 3UL
-
-                  ]
+                  4UL<rowindex>, 5UL<colindex>, 3UL ]
             )
 
         Matrix.fromCoordinateList clist
-
 
     let expected =
         let clist =
@@ -921,176 +746,297 @@ let ``Boruvka MST big.`` () =
                   10UL<rowindex>, 5UL<colindex>, 2UL
 
                   4UL<rowindex>, 5UL<colindex>, 3UL
-                  5UL<rowindex>, 4UL<colindex>, 3UL
-
-                  ]
+                  5UL<rowindex>, 4UL<colindex>, 3UL ]
             )
 
         Matrix.fromCoordinateList clist |> Ok
 
+    graph, expected
+
+let private ``test complex line`` () =
+    let graph =
+        let clist =
+            Matrix.CoordinateList(
+                10UL<nrows>,
+                10UL<ncols>,
+                [ 0UL<rowindex>, 1UL<colindex>, 1UL
+                  1UL<rowindex>, 0UL<colindex>, 1UL
+
+                  1UL<rowindex>, 2UL<colindex>, 2UL
+                  2UL<rowindex>, 1UL<colindex>, 2UL
+
+                  2UL<rowindex>, 3UL<colindex>, 1UL
+                  3UL<rowindex>, 2UL<colindex>, 1UL
+
+                  3UL<rowindex>, 4UL<colindex>, 3UL
+                  4UL<rowindex>, 3UL<colindex>, 3UL
+
+                  4UL<rowindex>, 5UL<colindex>, 1UL
+                  5UL<rowindex>, 4UL<colindex>, 1UL
+
+                  5UL<rowindex>, 6UL<colindex>, 1UL
+                  6UL<rowindex>, 5UL<colindex>, 1UL
+
+                  6UL<rowindex>, 7UL<colindex>, 2UL
+                  7UL<rowindex>, 6UL<colindex>, 2UL
+
+                  7UL<rowindex>, 8UL<colindex>, 1UL
+                  8UL<rowindex>, 7UL<colindex>, 1UL
+
+                  8UL<rowindex>, 9UL<colindex>, 1UL
+                  9UL<rowindex>, 8UL<colindex>, 1UL ]
+            )
+
+        Matrix.fromCoordinateList clist
+
+    graph, Ok graph
+
+let private ``test complex line 2`` () =
+    let graph =
+        let clist =
+            Matrix.CoordinateList(
+                10UL<nrows>,
+                10UL<ncols>,
+                [ 0UL<rowindex>, 1UL<colindex>, 1UL
+                  1UL<rowindex>, 0UL<colindex>, 1UL
+
+                  1UL<rowindex>, 2UL<colindex>, 2UL
+                  2UL<rowindex>, 1UL<colindex>, 2UL
+
+                  2UL<rowindex>, 3UL<colindex>, 1UL
+                  3UL<rowindex>, 2UL<colindex>, 1UL
+
+                  3UL<rowindex>, 9UL<colindex>, 3UL
+                  9UL<rowindex>, 3UL<colindex>, 3UL
+
+                  9UL<rowindex>, 8UL<colindex>, 1UL
+                  8UL<rowindex>, 9UL<colindex>, 1UL
+
+                  8UL<rowindex>, 7UL<colindex>, 1UL
+                  7UL<rowindex>, 8UL<colindex>, 1UL
+
+                  6UL<rowindex>, 7UL<colindex>, 2UL
+                  7UL<rowindex>, 6UL<colindex>, 2UL
+
+                  5UL<rowindex>, 6UL<colindex>, 1UL
+                  6UL<rowindex>, 5UL<colindex>, 1UL
+
+                  5UL<rowindex>, 4UL<colindex>, 1UL
+                  4UL<rowindex>, 5UL<colindex>, 1UL ]
+            )
+
+        Matrix.fromCoordinateList clist
+
+    graph, Ok graph
+
+
+// ============== Tests ==============
+
+[<Fact>]
+let ``Boruvka MST 2 nodes.`` () =
+    let graph, expected = ``test 2 nodes`` ()
     checkResult (Graph.Boruvka.mst graph) expected
+
+[<Fact>]
+let ``Maggs-Plotkin MST 2 nodes.`` () =
+    let graph, expected = ``test 2 nodes`` ()
+    checkResult (Graph.Maggs_Plotkin_MST.mst graph) expected
+
+
+[<Fact>]
+let ``Boruvka MST 3 nodes line.`` () =
+    let graph, expected = ``test 3 nodes line`` ()
+    checkResult (Graph.Boruvka.mst graph) expected
+
+[<Fact>]
+let ``Maggs-Plotkin MST 3 nodes line.`` () =
+    let graph, expected = ``test 3 nodes line`` ()
+    checkResult (Graph.Maggs_Plotkin_MST.mst graph) expected
+
+
+[<Fact>]
+let ``Boruvka MST 4 nodes line.`` () =
+    let graph, expected = ``test 4 nodes line`` ()
+    checkResult (Graph.Boruvka.mst graph) expected
+
+[<Fact>]
+let ``Maggs-Plotkin MST 4 nodes line.`` () =
+    let graph, expected = ``test 4 nodes line`` ()
+    checkResult (Graph.Maggs_Plotkin_MST.mst graph) expected
+
+
+
+[<Fact>]
+let ``Boruvka MST 5 nodes line.`` () =
+    let graph, expected = ``test 5 nodes line`` ()
+    checkResult (Graph.Boruvka.mst graph) expected
+
+[<Fact>]
+let ``Maggs-Plotkin MST 5 nodes line.`` () =
+    let graph, expected = ``test 5 nodes line`` ()
+    checkResult (Graph.Maggs_Plotkin_MST.mst graph) expected
+
+
+[<Fact>]
+let ``Boruvka MST 5 nodes star.`` () =
+    let graph, expected = ``test 5 nodes star`` ()
+    checkResult (Graph.Boruvka.mst graph) expected
+
+[<Fact>]
+let ``Maggs-Plotkin MST 5 nodes star.`` () =
+    let graph, expected = ``test 5 nodes star`` ()
+    checkResult (Graph.Maggs_Plotkin_MST.mst graph) expected
+
+
+[<Fact>]
+let ``Boruvka MST 5 nodes complete.`` () =
+    let graph, expected = ``test 5 nodes complete`` ()
+    checkResult (Graph.Boruvka.mst graph) expected
+
+[<Fact>]
+let ``Maggs-Plotkin MST 5 nodes complete.`` () =
+    let graph, expected = ``test 5 nodes complete`` ()
+    checkResult (Graph.Maggs_Plotkin_MST.mst graph) expected
+
+
+[<Fact>]
+let ``Boruvka MST two components.`` () =
+    let graph, expected = ``test two components`` ()
+    checkResult (Graph.Boruvka.mst graph) expected
+
+[<Fact>]
+let ``Maggs-Plotkin MST two components.`` () =
+    let graph, expected = ``test two components`` ()
+    checkResult (Graph.Maggs_Plotkin_MST.mst graph) expected
+
+
+[<Fact>]
+let ``Boruvka MST cycle graph 6 nodes.`` () =
+    let graph, expected = ``test cycle graph 6 nodes`` ()
+    checkResult (Graph.Boruvka.mst graph) expected
+
+[<Fact>]
+let ``Maggs-Plotkin MST cycle graph 6 nodes.`` () =
+    let graph, expected = ``test cycle graph 6 nodes`` ()
+    checkResult (Graph.Maggs_Plotkin_MST.mst graph) expected
+
+
+[<Fact>]
+let ``Boruvka MST complete bipartite K3,3.`` () =
+    let graph, expected = ``test complete bipartite K3,3`` ()
+    checkResult (Graph.Boruvka.mst graph) expected
+
+[<Fact>]
+let ``Maggs-Plotkin MST complete bipartite K3,3.`` () =
+    let graph, expected = ``test complete bipartite K3,3`` ()
+    checkResult (Graph.Maggs_Plotkin_MST.mst graph) expected
+
+
+[<Fact>]
+let ``Boruvka MST random weights.`` () =
+    let graph, expected = ``test random weights`` ()
+    checkResult (Graph.Boruvka.mst graph) expected
+
+[<Fact>]
+let ``Maggs-Plotkin MST random weights.`` () =
+    let graph, expected = ``test random weights`` ()
+    checkResult (Graph.Maggs_Plotkin_MST.mst graph) expected
+
+
+[<Fact>]
+let ``Boruvka MST 8 nodes grid.`` () =
+    let graph, expected = ``test 8 nodes grid`` ()
+    checkResult (Graph.Boruvka.mst graph) expected
+
+[<Fact>]
+let ``Maggs-Plotkin MST 8 nodes grid.`` () =
+    let graph, expected = ``test 8 nodes grid`` ()
+    checkResult (Graph.Maggs_Plotkin_MST.mst graph) expected
+
+
+[<Fact>]
+let ``Boruvka MST 10 nodes random.`` () =
+    let graph, expected = ``test 10 nodes random`` ()
+    checkResult (Graph.Boruvka.mst graph) expected
+
+[<Fact>]
+let ``Maggs-Plotkin MST 10 nodes random.`` () =
+    let graph, expected = ``test 10 nodes random`` ()
+    checkResult (Graph.Maggs_Plotkin_MST.mst graph) expected
+
+
+[<Fact>]
+let ``Boruvka MST simple triangle.`` () =
+    let graph, expected = ``test simple triangle`` ()
+    checkResult (Graph.Boruvka.mst graph) expected
+
+[<Fact>]
+let ``Maggs-Plotkin MST simple triangle.`` () =
+    let graph, expected = ``test simple triangle`` ()
+    checkResult (Graph.Maggs_Plotkin_MST.mst graph) expected
+
+
+[<Fact>]
+let ``Boruvka MST simple square.`` () =
+    let graph, expected = ``test simple square`` ()
+    checkResult (Graph.Boruvka.mst graph) expected
+
+[<Fact>]
+let ``Maggs-Plotkin MST simple square.`` () =
+    let graph, expected = ``test simple square`` ()
+    checkResult (Graph.Maggs_Plotkin_MST.mst graph) expected
+
+
+[<Fact>]
+let ``Boruvka MST simple square in two steps.`` () =
+    let graph, expected = ``test simple square in two steps`` ()
+    checkResult (Graph.Boruvka.mst graph) expected
+
+[<Fact>]
+let ``Maggs-Plotkin MST simple square in two steps.`` () =
+    let graph, expected = ``test simple square in two steps`` ()
+    checkResult (Graph.Maggs_Plotkin_MST.mst graph) expected
+
+
+[<Fact>]
+let ``Boruvka MST.`` () =
+    let graph, expected = ``test 7 nodes`` ()
+    checkResult (Graph.Boruvka.mst graph) expected
+
+[<Fact>]
+let ``Maggs-Plotkin MST.`` () =
+    let graph, expected = ``test 7 nodes`` ()
+    checkResult (Graph.Maggs_Plotkin_MST.mst graph) expected
+
+
+[<Fact>]
+let ``Boruvka MST big.`` () =
+    let graph, expected = ``test big`` ()
+    checkResult (Graph.Boruvka.mst graph) expected
+
+[<Fact>]
+let ``Maggs-Plotkin MST big.`` () =
+    let graph, expected = ``test big`` ()
+    checkResult (Graph.Maggs_Plotkin_MST.mst graph) expected
 
 
 [<Fact>]
 let ``Boruvka MST complex line.`` () =
-
-    let graph =
-        let clist =
-            Matrix.CoordinateList(
-                10UL<nrows>,
-                10UL<ncols>,
-                [ 0UL<rowindex>, 1UL<colindex>, 1UL
-                  1UL<rowindex>, 0UL<colindex>, 1UL
-
-                  1UL<rowindex>, 2UL<colindex>, 2UL
-                  2UL<rowindex>, 1UL<colindex>, 2UL
-
-                  2UL<rowindex>, 3UL<colindex>, 1UL
-                  3UL<rowindex>, 2UL<colindex>, 1UL
-
-                  3UL<rowindex>, 4UL<colindex>, 3UL
-                  4UL<rowindex>, 3UL<colindex>, 3UL
-
-                  4UL<rowindex>, 5UL<colindex>, 1UL
-                  5UL<rowindex>, 4UL<colindex>, 1UL
-
-                  5UL<rowindex>, 6UL<colindex>, 1UL
-                  6UL<rowindex>, 5UL<colindex>, 1UL
-
-                  6UL<rowindex>, 7UL<colindex>, 2UL
-                  7UL<rowindex>, 6UL<colindex>, 2UL
-
-                  7UL<rowindex>, 8UL<colindex>, 1UL
-                  8UL<rowindex>, 7UL<colindex>, 1UL
-
-                  8UL<rowindex>, 9UL<colindex>, 1UL
-                  9UL<rowindex>, 8UL<colindex>, 1UL
-
-
-                  ]
-            )
-
-        Matrix.fromCoordinateList clist
-
-
-    let expected =
-        let clist =
-            Matrix.CoordinateList(
-                10UL<nrows>,
-                10UL<ncols>,
-                [ 0UL<rowindex>, 1UL<colindex>, 1UL
-                  1UL<rowindex>, 0UL<colindex>, 1UL
-
-                  1UL<rowindex>, 2UL<colindex>, 2UL
-                  2UL<rowindex>, 1UL<colindex>, 2UL
-
-                  2UL<rowindex>, 3UL<colindex>, 1UL
-                  3UL<rowindex>, 2UL<colindex>, 1UL
-
-                  3UL<rowindex>, 4UL<colindex>, 3UL
-                  4UL<rowindex>, 3UL<colindex>, 3UL
-
-                  4UL<rowindex>, 5UL<colindex>, 1UL
-                  5UL<rowindex>, 4UL<colindex>, 1UL
-
-                  5UL<rowindex>, 6UL<colindex>, 1UL
-                  6UL<rowindex>, 5UL<colindex>, 1UL
-
-                  6UL<rowindex>, 7UL<colindex>, 2UL
-                  7UL<rowindex>, 6UL<colindex>, 2UL
-
-                  7UL<rowindex>, 8UL<colindex>, 1UL
-                  8UL<rowindex>, 7UL<colindex>, 1UL
-
-                  8UL<rowindex>, 9UL<colindex>, 1UL
-                  9UL<rowindex>, 8UL<colindex>, 1UL
-
-
-                  ]
-            )
-
-        Matrix.fromCoordinateList clist |> Ok
-
+    let graph, expected = ``test complex line`` ()
     checkResult (Graph.Boruvka.mst graph) expected
+
+[<Fact>]
+let ``Maggs-Plotkin MST complex line.`` () =
+    let graph, expected = ``test complex line`` ()
+    checkResult (Graph.Maggs_Plotkin_MST.mst graph) expected
 
 
 [<Fact>]
 let ``Boruvka MST complex line 2.`` () =
-
-    let graph =
-        let clist =
-            Matrix.CoordinateList(
-                10UL<nrows>,
-                10UL<ncols>,
-                [ 0UL<rowindex>, 1UL<colindex>, 1UL
-                  1UL<rowindex>, 0UL<colindex>, 1UL
-
-                  1UL<rowindex>, 2UL<colindex>, 2UL
-                  2UL<rowindex>, 1UL<colindex>, 2UL
-
-                  2UL<rowindex>, 3UL<colindex>, 1UL
-                  3UL<rowindex>, 2UL<colindex>, 1UL
-
-                  3UL<rowindex>, 9UL<colindex>, 3UL
-                  9UL<rowindex>, 3UL<colindex>, 3UL
-
-                  9UL<rowindex>, 8UL<colindex>, 1UL
-                  8UL<rowindex>, 9UL<colindex>, 1UL
-
-                  8UL<rowindex>, 7UL<colindex>, 1UL
-                  7UL<rowindex>, 8UL<colindex>, 1UL
-
-                  6UL<rowindex>, 7UL<colindex>, 2UL
-                  7UL<rowindex>, 6UL<colindex>, 2UL
-
-                  5UL<rowindex>, 6UL<colindex>, 1UL
-                  6UL<rowindex>, 5UL<colindex>, 1UL
-
-                  5UL<rowindex>, 4UL<colindex>, 1UL
-                  4UL<rowindex>, 5UL<colindex>, 1UL
-
-
-                  ]
-            )
-
-        Matrix.fromCoordinateList clist
-
-
-    let expected =
-        let clist =
-            Matrix.CoordinateList(
-                10UL<nrows>,
-                10UL<ncols>,
-                [ 0UL<rowindex>, 1UL<colindex>, 1UL
-                  1UL<rowindex>, 0UL<colindex>, 1UL
-
-                  1UL<rowindex>, 2UL<colindex>, 2UL
-                  2UL<rowindex>, 1UL<colindex>, 2UL
-
-                  2UL<rowindex>, 3UL<colindex>, 1UL
-                  3UL<rowindex>, 2UL<colindex>, 1UL
-
-                  3UL<rowindex>, 9UL<colindex>, 3UL
-                  9UL<rowindex>, 3UL<colindex>, 3UL
-
-                  9UL<rowindex>, 8UL<colindex>, 1UL
-                  8UL<rowindex>, 9UL<colindex>, 1UL
-
-                  8UL<rowindex>, 7UL<colindex>, 1UL
-                  7UL<rowindex>, 8UL<colindex>, 1UL
-
-                  6UL<rowindex>, 7UL<colindex>, 2UL
-                  7UL<rowindex>, 6UL<colindex>, 2UL
-
-                  5UL<rowindex>, 6UL<colindex>, 1UL
-                  6UL<rowindex>, 5UL<colindex>, 1UL
-
-                  5UL<rowindex>, 4UL<colindex>, 1UL
-                  4UL<rowindex>, 5UL<colindex>, 1UL
-
-                  ]
-            )
-
-        Matrix.fromCoordinateList clist |> Ok
-
+    let graph, expected = ``test complex line 2`` ()
     checkResult (Graph.Boruvka.mst graph) expected
+
+[<Fact>]
+let ``Maggs-Plotkin MST complex line 2.`` () =
+    let graph, expected = ``test complex line 2`` ()
+    checkResult (Graph.Maggs_Plotkin_MST.mst graph) expected
