@@ -43,8 +43,9 @@ let mst (graph: Matrix.SparseMatrix<'a>) =
                 | _ -> y)
             |> Result.mapError DiagAdditionProblem
 
-        let graph = 
-            Matrix.mapi graph (fun i j v -> Option.map (fun x -> x, min (uint64 i) (uint64 j), max (uint64 i) (uint64 j)) v) 
+        let graph =
+            Matrix.mapi graph (fun i j v ->
+                Option.map (fun x -> x, min (uint64 i) (uint64 j), max (uint64 i) (uint64 j)) v)
 
         let! closure =
             let rec compute (matrix: SparseMatrix<_>) =
@@ -64,11 +65,14 @@ let mst (graph: Matrix.SparseMatrix<'a>) =
 
         let! mst =
             Matrix.map2i graph closure (fun i j x y ->
-                if uint64 i = uint64 j then None
-                elif x = y 
-                then 
-                 match x with | Some(w,_,_) -> Some(w) | _ -> None
-                else None)
+                if uint64 i = uint64 j then
+                    None
+                elif x = y then
+                    match x with
+                    | Some(w, _, _) -> Some(w)
+                    | _ -> None
+                else
+                    None)
             |> Result.mapError MSTComputationProblem
 
         return mst

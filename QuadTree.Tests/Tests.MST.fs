@@ -120,11 +120,10 @@ let private ``test square`` () =
                   2UL<rowindex>, 1UL<colindex>, 2UL
 
                   2UL<rowindex>, 3UL<colindex>, 1UL
-                  3UL<rowindex>, 2UL<colindex>, 1UL 
+                  3UL<rowindex>, 2UL<colindex>, 1UL
 
                   3UL<rowindex>, 0UL<colindex>, 2UL
-                  0UL<rowindex>, 3UL<colindex>, 2UL 
-                  ]
+                  0UL<rowindex>, 3UL<colindex>, 2UL ]
             )
 
         Matrix.fromCoordinateList clist
@@ -138,15 +137,13 @@ let private ``test square`` () =
                   1UL<rowindex>, 0UL<colindex>, 1UL
 
                   2UL<rowindex>, 3UL<colindex>, 1UL
-                  3UL<rowindex>, 2UL<colindex>, 1UL 
+                  3UL<rowindex>, 2UL<colindex>, 1UL
 
                   3UL<rowindex>, 0UL<colindex>, 2UL
-                  0UL<rowindex>, 3UL<colindex>, 2UL 
-                  ]
+                  0UL<rowindex>, 3UL<colindex>, 2UL ]
             )
 
-        Matrix.fromCoordinateList clist 
-        |> Ok
+        Matrix.fromCoordinateList clist |> Ok
 
 
     graph, expected
@@ -358,37 +355,37 @@ let private ``test random weights`` () =
 
                   0UL<rowindex>, 2UL<colindex>, 5UL
                   2UL<rowindex>, 0UL<colindex>, 5UL
-                  
+
                   0UL<rowindex>, 3UL<colindex>, 9UL
                   3UL<rowindex>, 0UL<colindex>, 9UL
-                  
+
                   1UL<rowindex>, 2UL<colindex>, 3UL
                   2UL<rowindex>, 1UL<colindex>, 3UL
-                  
+
                   1UL<rowindex>, 3UL<colindex>, 4UL
                   3UL<rowindex>, 1UL<colindex>, 4UL
-                  
+
                   2UL<rowindex>, 3UL<colindex>, 2UL
                   3UL<rowindex>, 2UL<colindex>, 2UL
-                  
+
                   4UL<rowindex>, 5UL<colindex>, 1UL
                   5UL<rowindex>, 4UL<colindex>, 1UL
-                  
+
                   4UL<rowindex>, 6UL<colindex>, 6UL
                   6UL<rowindex>, 4UL<colindex>, 6UL
-                  
+
                   4UL<rowindex>, 7UL<colindex>, 8UL
                   7UL<rowindex>, 4UL<colindex>, 8UL
-                  
+
                   5UL<rowindex>, 6UL<colindex>, 3UL
                   6UL<rowindex>, 5UL<colindex>, 3UL
-                  
+
                   5UL<rowindex>, 7UL<colindex>, 5UL
                   7UL<rowindex>, 5UL<colindex>, 5UL
-                  
+
                   6UL<rowindex>, 7UL<colindex>, 2UL
                   7UL<rowindex>, 6UL<colindex>, 2UL
-                  
+
                   // Connect two components
                   3UL<rowindex>, 4UL<colindex>, 10UL
                   4UL<rowindex>, 3UL<colindex>, 10UL ]
@@ -403,25 +400,24 @@ let private ``test random weights`` () =
                 8UL<ncols>,
                 [ 0UL<rowindex>, 2UL<colindex>, 5UL
                   2UL<rowindex>, 0UL<colindex>, 5UL
-                  
+
                   1UL<rowindex>, 2UL<colindex>, 3UL
                   2UL<rowindex>, 1UL<colindex>, 3UL
-                  
+
                   2UL<rowindex>, 3UL<colindex>, 2UL
                   3UL<rowindex>, 2UL<colindex>, 2UL
-                  
+
                   4UL<rowindex>, 3UL<colindex>, 10UL
                   3UL<rowindex>, 4UL<colindex>, 10UL
-                  
+
                   4UL<rowindex>, 5UL<colindex>, 1UL
                   5UL<rowindex>, 4UL<colindex>, 1UL
-                  
+
                   5UL<rowindex>, 6UL<colindex>, 3UL
                   6UL<rowindex>, 5UL<colindex>, 3UL
-                  
+
                   6UL<rowindex>, 7UL<colindex>, 2UL
-                  7UL<rowindex>, 6UL<colindex>, 2UL
-                  ]
+                  7UL<rowindex>, 6UL<colindex>, 2UL ]
             )
 
         Matrix.fromCoordinateList clist |> Ok
@@ -498,37 +494,37 @@ let private ``test 10 nodes random`` () =
 
                   0UL<rowindex>, 5UL<colindex>, 2UL
                   5UL<rowindex>, 0UL<colindex>, 2UL
-                  
+
                   1UL<rowindex>, 2UL<colindex>, 3UL
                   2UL<rowindex>, 1UL<colindex>, 3UL
-                  
+
                   1UL<rowindex>, 6UL<colindex>, 5UL
                   6UL<rowindex>, 1UL<colindex>, 5UL
-                  
+
                   2UL<rowindex>, 3UL<colindex>, 1UL
                   3UL<rowindex>, 2UL<colindex>, 1UL
-                  
+
                   2UL<rowindex>, 7UL<colindex>, 4UL
                   7UL<rowindex>, 2UL<colindex>, 4UL
-                  
+
                   3UL<rowindex>, 4UL<colindex>, 2UL
                   4UL<rowindex>, 3UL<colindex>, 2UL
-                  
+
                   3UL<rowindex>, 8UL<colindex>, 6UL
                   8UL<rowindex>, 3UL<colindex>, 6UL
-                  
+
                   4UL<rowindex>, 9UL<colindex>, 3UL
                   9UL<rowindex>, 4UL<colindex>, 3UL
-                  
+
                   5UL<rowindex>, 6UL<colindex>, 1UL
                   6UL<rowindex>, 5UL<colindex>, 1UL
-                  
+
                   6UL<rowindex>, 7UL<colindex>, 2UL
                   7UL<rowindex>, 6UL<colindex>, 2UL
-                  
+
                   7UL<rowindex>, 8UL<colindex>, 1UL
                   8UL<rowindex>, 7UL<colindex>, 1UL
-                  
+
                   8UL<rowindex>, 9UL<colindex>, 4UL
                   9UL<rowindex>, 8UL<colindex>, 4UL ]
             )
@@ -542,30 +538,30 @@ let private ``test 10 nodes random`` () =
                 10UL<ncols>,
                 [ 0UL<rowindex>, 1UL<colindex>, 4UL
                   1UL<rowindex>, 0UL<colindex>, 4UL
-                  
+
                   1UL<rowindex>, 2UL<colindex>, 3UL
                   2UL<rowindex>, 1UL<colindex>, 3UL
-                  
+
                   3UL<rowindex>, 2UL<colindex>, 1UL
                   2UL<rowindex>, 3UL<colindex>, 1UL
-                  
+
                   3UL<rowindex>, 4UL<colindex>, 2UL
                   4UL<rowindex>, 3UL<colindex>, 2UL
-                  
+
                   9UL<rowindex>, 4UL<colindex>, 3UL
                   4UL<rowindex>, 9UL<colindex>, 3UL
-                  
+
                   0UL<rowindex>, 5UL<colindex>, 2UL
                   5UL<rowindex>, 0UL<colindex>, 2UL
-                  
+
                   6UL<rowindex>, 5UL<colindex>, 1UL
-                  5UL<rowindex>, 6UL<colindex>, 1UL 
-                  
+                  5UL<rowindex>, 6UL<colindex>, 1UL
+
                   7UL<rowindex>, 6UL<colindex>, 2UL
                   6UL<rowindex>, 7UL<colindex>, 2UL
-                  
+
                   7UL<rowindex>, 8UL<colindex>, 1UL
-                  8UL<rowindex>, 7UL<colindex>, 1UL]
+                  8UL<rowindex>, 7UL<colindex>, 1UL ]
             )
 
         Matrix.fromCoordinateList clist |> Ok
@@ -961,9 +957,6 @@ let ``Boruvka MST 3 nodes line.`` () =
 let ``Maggs-Plotkin MST 3 nodes line.`` () =
     let graph, expected = ``test 3 nodes line`` ()
     let result = Graph.Maggs_Plotkin_MST.mst graph
-    //match result with
-    //| Ok (result) ->   Matrix.Tests.printMatrixCoordinate result
-    //| Error e -> printfn $"!!! {e}"
     checkResult "Maggs-Plotkin 3 nodes line" result expected
 
 
@@ -986,7 +979,8 @@ let ``Boruvka MST square.`` () =
 [<Fact>]
 let ``Maggs-Plotkin MST square.`` () =
     let graph, expected = ``test square`` ()
-    checkResult "Maggs-Plotkin 4 nodes line" (Graph.Maggs_Plotkin_MST.mst graph) expected
+    let result = Graph.Maggs_Plotkin_MST.mst graph
+    checkResult "Maggs-Plotkin 4 nodes line" result expected
 
 
 [<Fact>]
@@ -1059,18 +1053,12 @@ let ``Maggs-Plotkin MST complete bipartite K3,3.`` () =
 let ``Boruvka MST random weights.`` () =
     let graph, expected = ``test random weights`` ()
     let result = (Graph.Boruvka.mst graph)
-    match result with
-    | Ok (result) ->   Matrix.Tests.printMatrixCoordinate result
-    | Error e -> printfn $"!!! {e}"
     checkResult "Boruvka random weights" result expected
 
 [<Fact>]
 let ``Maggs-Plotkin MST random weights.`` () =
     let graph, expected = ``test random weights`` ()
     let result = Graph.Maggs_Plotkin_MST.mst graph
-    match result with
-    | Ok (result) ->   Matrix.Tests.printMatrixCoordinate result
-    | Error e -> printfn $"!!! {e}"
     checkResult "Maggs-Plotkin random weights" result expected
 
 
@@ -1094,9 +1082,6 @@ let ``Boruvka MST 10 nodes random.`` () =
 let ``Maggs-Plotkin MST 10 nodes random.`` () =
     let graph, expected = ``test 10 nodes random`` ()
     let result = Graph.Maggs_Plotkin_MST.mst graph
-    //match result with
-    //| Ok (result) ->   Matrix.Tests.printMatrixCoordinate result
-    //| Error e -> printfn $"!!! {e}"
     checkResult "Maggs-Plotkin 10 nodes random" result expected
 
 
@@ -1131,9 +1116,6 @@ let ``Boruvka MST simple square in two steps.`` () =
 let ``Maggs-Plotkin MST simple square in two steps.`` () =
     let graph, expected = ``test simple square in two steps`` ()
     let result = Graph.Maggs_Plotkin_MST.mst graph
-    //match result with
-    //| Ok (result) ->   Matrix.Tests.printMatrixCoordinate result
-    //| Error e -> printfn $"!!! {e}"
     checkResult "Maggs-Plotkin simple square in two steps" result expected
 
 
@@ -1152,9 +1134,6 @@ let ``Maggs-Plotkin MST.`` () =
 let ``Boruvka MST big.`` () =
     let graph, expected = ``test big`` ()
     let result = (Graph.Boruvka.mst graph)
-    //match result with
-    //| Ok (result) ->   Matrix.Tests.printMatrixCoordinate result
-    //| Error e -> printfn $"!!! {e}"
     checkResult "Boruvka big" result expected
 
 [<Fact>]
