@@ -12,6 +12,7 @@ Infrastructure for benchmarking the implemented algorithms is available in the [
 * Single-source shortest path (SSSP)
 * Triangles counting
 * Boruvka MSF
+* Maggs-Plotkin MSF
 
 ## TODO
 * [ ] Single-source parent BFS
