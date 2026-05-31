@@ -19,7 +19,7 @@ let mst (graph: Matrix.SparseMatrix<'a>) =
             Matrix.CoordinateList(
                 graph.nrows,
                 graph.ncols,
-                [ for i in 0UL .. uint64 graph.nrows -> (i * 1UL<rowindex>, i * 1UL<colindex>, zero) ]
+                [ for i in 0UL .. uint64 graph.nrows - 1UL -> (i * 1UL<rowindex>, i * 1UL<colindex>, zero) ]
             )
         )
 
@@ -43,6 +43,9 @@ let mst (graph: Matrix.SparseMatrix<'a>) =
                 | _ -> y)
             |> Result.mapError DiagAdditionProblem
 
+        let graph = 
+            Matrix.mapi graph (fun i j v -> Option.map (fun x -> x, min (uint64 i) (uint64 j), max (uint64 i) (uint64 j)) v) 
+
         let! closure =
             let rec compute (matrix: SparseMatrix<_>) =
                 let nnz = matrix.nvals
@@ -62,7 +65,9 @@ let mst (graph: Matrix.SparseMatrix<'a>) =
         let! mst =
             Matrix.map2i graph closure (fun i j x y ->
                 if uint64 i = uint64 j then None
-                elif x = y then x
+                elif x = y 
+                then 
+                 match x with | Some(w,_,_) -> Some(w) | _ -> None
                 else None)
             |> Result.mapError MSTComputationProblem
 
