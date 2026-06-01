@@ -53,7 +53,8 @@ let bfs_level graph startVertices =
 
     let initVisited _ v = v |> Option.map (fun _ -> 0UL)
 
-    let frontier0 = Vector.mapi startVertices (fun _ v -> v |> Option.map (fun _ -> 0UL))
+    let frontier0 =
+        Vector.mapi startVertices (fun _ v -> v |> Option.map (fun _ -> 0UL))
 
     bfs op_add op_mult initVisited graph frontier0
 

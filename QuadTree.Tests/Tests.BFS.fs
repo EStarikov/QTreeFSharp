@@ -8,10 +8,7 @@ open Vector
 open Common
 
 let singleStart (n: uint64) (s: uint64) =
-    Vector.CoordinateList(
-        n * 1UL<Vector.dataLength>,
-        [s * 1UL<Vector.index>, 1UL]
-    )
+    Vector.CoordinateList(n * 1UL<Vector.dataLength>, [ s * 1UL<Vector.index>, 1UL ])
     |> Vector.fromCoordinateList
 
 let vec (n: uint64) pairs =
@@ -120,10 +117,7 @@ let ``Simple parent bfs.`` () =
         let tree =
             Vector.btree.Node(
                 Vector.btree.Leaf(UserValue(Some(0UL))),
-                Vector.btree.Node(
-                    Vector.btree.Leaf(UserValue(Some(0UL))),
-                    Vector.btree.Leaf(UserValue(Some(1UL)))
-                )
+                Vector.btree.Node(Vector.btree.Leaf(UserValue(Some(0UL))), Vector.btree.Leaf(UserValue(Some(1UL))))
             )
 
         let store = Vector.Storage(4UL<storageSize>, tree)
@@ -140,10 +134,10 @@ let private line3graph =
         Matrix.CoordinateList(
             3UL<nrows>,
             3UL<ncols>,
-            [0UL<rowindex>, 1UL<colindex>, 1UL
-             1UL<rowindex>, 0UL<colindex>, 1UL
-             1UL<rowindex>, 2UL<colindex>, 1UL
-             2UL<rowindex>, 1UL<colindex>, 1UL]
+            [ 0UL<rowindex>, 1UL<colindex>, 1UL
+              1UL<rowindex>, 0UL<colindex>, 1UL
+              1UL<rowindex>, 2UL<colindex>, 1UL
+              2UL<rowindex>, 1UL<colindex>, 1UL ]
         )
     )
 
@@ -186,14 +180,14 @@ let private star5graph =
         Matrix.CoordinateList(
             5UL<nrows>,
             5UL<ncols>,
-            [0UL<rowindex>, 1UL<colindex>, 1UL
-             1UL<rowindex>, 0UL<colindex>, 1UL
-             0UL<rowindex>, 2UL<colindex>, 1UL
-             2UL<rowindex>, 0UL<colindex>, 1UL
-             0UL<rowindex>, 3UL<colindex>, 1UL
-             3UL<rowindex>, 0UL<colindex>, 1UL
-             0UL<rowindex>, 4UL<colindex>, 1UL
-             4UL<rowindex>, 0UL<colindex>, 1UL]
+            [ 0UL<rowindex>, 1UL<colindex>, 1UL
+              1UL<rowindex>, 0UL<colindex>, 1UL
+              0UL<rowindex>, 2UL<colindex>, 1UL
+              2UL<rowindex>, 0UL<colindex>, 1UL
+              0UL<rowindex>, 3UL<colindex>, 1UL
+              3UL<rowindex>, 0UL<colindex>, 1UL
+              0UL<rowindex>, 4UL<colindex>, 1UL
+              4UL<rowindex>, 0UL<colindex>, 1UL ]
         )
     )
 
@@ -236,19 +230,19 @@ let private twoCompGraph =
         Matrix.CoordinateList(
             6UL<nrows>,
             6UL<ncols>,
-            [0UL<rowindex>, 1UL<colindex>, 1UL
-             1UL<rowindex>, 0UL<colindex>, 1UL
-             1UL<rowindex>, 2UL<colindex>, 1UL
-             2UL<rowindex>, 1UL<colindex>, 1UL
-             0UL<rowindex>, 2UL<colindex>, 1UL
-             2UL<rowindex>, 0UL<colindex>, 1UL
+            [ 0UL<rowindex>, 1UL<colindex>, 1UL
+              1UL<rowindex>, 0UL<colindex>, 1UL
+              1UL<rowindex>, 2UL<colindex>, 1UL
+              2UL<rowindex>, 1UL<colindex>, 1UL
+              0UL<rowindex>, 2UL<colindex>, 1UL
+              2UL<rowindex>, 0UL<colindex>, 1UL
 
-             3UL<rowindex>, 4UL<colindex>, 1UL
-             4UL<rowindex>, 3UL<colindex>, 1UL
-             4UL<rowindex>, 5UL<colindex>, 1UL
-             5UL<rowindex>, 4UL<colindex>, 1UL
-             3UL<rowindex>, 5UL<colindex>, 1UL
-             5UL<rowindex>, 3UL<colindex>, 1UL]
+              3UL<rowindex>, 4UL<colindex>, 1UL
+              4UL<rowindex>, 3UL<colindex>, 1UL
+              4UL<rowindex>, 5UL<colindex>, 1UL
+              5UL<rowindex>, 4UL<colindex>, 1UL
+              3UL<rowindex>, 5UL<colindex>, 1UL
+              5UL<rowindex>, 3UL<colindex>, 1UL ]
         )
     )
 
@@ -257,9 +251,7 @@ let ``Level bfs two components start 0`` () =
     let n = uint64 twoCompGraph.ncols
     let start = singleStart n 0UL
     let result = Graph.BFS.bfs_level twoCompGraph start
-    let expected =
-        [ Some 0UL; Some 1UL; Some 1UL
-          None;    None;    None ]
+    let expected = [ Some 0UL; Some 1UL; Some 1UL; None; None; None ]
     Assert.Equal(Ok expected, Result.map (unsafes n) result)
 
 [<Fact>]
@@ -267,9 +259,7 @@ let ``Parent bfs two components start 0`` () =
     let n = uint64 twoCompGraph.ncols
     let start = singleStart n 0UL
     let result = Graph.BFS.bfs_parent twoCompGraph start
-    let expected =
-        [ Some 0UL; Some 0UL; Some 0UL
-          None;    None;    None ]
+    let expected = [ Some 0UL; Some 0UL; Some 0UL; None; None; None ]
     Assert.Equal(Ok expected, Result.map (unsafes n) result)
 
 // ============== Square (4-cycle) ==============
@@ -279,14 +269,14 @@ let private squareGraph =
         Matrix.CoordinateList(
             4UL<nrows>,
             4UL<ncols>,
-            [0UL<rowindex>, 1UL<colindex>, 1UL
-             1UL<rowindex>, 0UL<colindex>, 1UL
-             1UL<rowindex>, 2UL<colindex>, 2UL
-             2UL<rowindex>, 1UL<colindex>, 2UL
-             2UL<rowindex>, 3UL<colindex>, 1UL
-             3UL<rowindex>, 2UL<colindex>, 1UL
-             3UL<rowindex>, 0UL<colindex>, 2UL
-             0UL<rowindex>, 3UL<colindex>, 2UL]
+            [ 0UL<rowindex>, 1UL<colindex>, 1UL
+              1UL<rowindex>, 0UL<colindex>, 1UL
+              1UL<rowindex>, 2UL<colindex>, 2UL
+              2UL<rowindex>, 1UL<colindex>, 2UL
+              2UL<rowindex>, 3UL<colindex>, 1UL
+              3UL<rowindex>, 2UL<colindex>, 1UL
+              3UL<rowindex>, 0UL<colindex>, 2UL
+              0UL<rowindex>, 3UL<colindex>, 2UL ]
         )
     )
 
@@ -313,18 +303,18 @@ let private cycle6graph =
         Matrix.CoordinateList(
             6UL<nrows>,
             6UL<ncols>,
-            [0UL<rowindex>, 1UL<colindex>, 1UL
-             1UL<rowindex>, 0UL<colindex>, 1UL
-             1UL<rowindex>, 2UL<colindex>, 2UL
-             2UL<rowindex>, 1UL<colindex>, 2UL
-             2UL<rowindex>, 3UL<colindex>, 3UL
-             3UL<rowindex>, 2UL<colindex>, 3UL
-             3UL<rowindex>, 4UL<colindex>, 4UL
-             4UL<rowindex>, 3UL<colindex>, 4UL
-             4UL<rowindex>, 5UL<colindex>, 5UL
-             5UL<rowindex>, 4UL<colindex>, 5UL
-             5UL<rowindex>, 0UL<colindex>, 6UL
-             0UL<rowindex>, 5UL<colindex>, 6UL]
+            [ 0UL<rowindex>, 1UL<colindex>, 1UL
+              1UL<rowindex>, 0UL<colindex>, 1UL
+              1UL<rowindex>, 2UL<colindex>, 2UL
+              2UL<rowindex>, 1UL<colindex>, 2UL
+              2UL<rowindex>, 3UL<colindex>, 3UL
+              3UL<rowindex>, 2UL<colindex>, 3UL
+              3UL<rowindex>, 4UL<colindex>, 4UL
+              4UL<rowindex>, 3UL<colindex>, 4UL
+              4UL<rowindex>, 5UL<colindex>, 5UL
+              5UL<rowindex>, 4UL<colindex>, 5UL
+              5UL<rowindex>, 0UL<colindex>, 6UL
+              0UL<rowindex>, 5UL<colindex>, 6UL ]
         )
     )
 
@@ -351,7 +341,7 @@ let private graph2 =
         Matrix.CoordinateList(
             2UL<nrows>,
             2UL<ncols>,
-            [0UL<rowindex>, 1UL<colindex>, 5UL; 1UL<rowindex>, 0UL<colindex>, 5UL]
+            [ 0UL<rowindex>, 1UL<colindex>, 5UL; 1UL<rowindex>, 0UL<colindex>, 5UL ]
         )
     )
 
@@ -390,9 +380,12 @@ let private line4graph =
         Matrix.CoordinateList(
             4UL<nrows>,
             4UL<ncols>,
-            [0UL<rowindex>, 1UL<colindex>, 1UL; 1UL<rowindex>, 0UL<colindex>, 1UL
-             1UL<rowindex>, 2UL<colindex>, 2UL; 2UL<rowindex>, 1UL<colindex>, 2UL
-             2UL<rowindex>, 3UL<colindex>, 3UL; 3UL<rowindex>, 2UL<colindex>, 3UL]
+            [ 0UL<rowindex>, 1UL<colindex>, 1UL
+              1UL<rowindex>, 0UL<colindex>, 1UL
+              1UL<rowindex>, 2UL<colindex>, 2UL
+              2UL<rowindex>, 1UL<colindex>, 2UL
+              2UL<rowindex>, 3UL<colindex>, 3UL
+              3UL<rowindex>, 2UL<colindex>, 3UL ]
         )
     )
 
@@ -431,10 +424,14 @@ let private line5graph =
         Matrix.CoordinateList(
             5UL<nrows>,
             5UL<ncols>,
-            [0UL<rowindex>, 1UL<colindex>, 1UL; 1UL<rowindex>, 0UL<colindex>, 1UL
-             1UL<rowindex>, 2UL<colindex>, 2UL; 2UL<rowindex>, 1UL<colindex>, 2UL
-             2UL<rowindex>, 3UL<colindex>, 3UL; 3UL<rowindex>, 2UL<colindex>, 3UL
-             3UL<rowindex>, 4UL<colindex>, 4UL; 4UL<rowindex>, 3UL<colindex>, 4UL]
+            [ 0UL<rowindex>, 1UL<colindex>, 1UL
+              1UL<rowindex>, 0UL<colindex>, 1UL
+              1UL<rowindex>, 2UL<colindex>, 2UL
+              2UL<rowindex>, 1UL<colindex>, 2UL
+              2UL<rowindex>, 3UL<colindex>, 3UL
+              3UL<rowindex>, 2UL<colindex>, 3UL
+              3UL<rowindex>, 4UL<colindex>, 4UL
+              4UL<rowindex>, 3UL<colindex>, 4UL ]
         )
     )
 
@@ -487,9 +484,12 @@ let private triangleGraph =
         Matrix.CoordinateList(
             3UL<nrows>,
             3UL<ncols>,
-            [0UL<rowindex>, 1UL<colindex>, 1UL; 1UL<rowindex>, 0UL<colindex>, 1UL
-             0UL<rowindex>, 2UL<colindex>, 1UL; 2UL<rowindex>, 0UL<colindex>, 1UL
-             1UL<rowindex>, 2UL<colindex>, 1UL; 2UL<rowindex>, 1UL<colindex>, 1UL]
+            [ 0UL<rowindex>, 1UL<colindex>, 1UL
+              1UL<rowindex>, 0UL<colindex>, 1UL
+              0UL<rowindex>, 2UL<colindex>, 1UL
+              2UL<rowindex>, 0UL<colindex>, 1UL
+              1UL<rowindex>, 2UL<colindex>, 1UL
+              2UL<rowindex>, 1UL<colindex>, 1UL ]
         )
     )
 
@@ -528,16 +528,26 @@ let private complete5graph =
         Matrix.CoordinateList(
             5UL<nrows>,
             5UL<ncols>,
-            [0UL<rowindex>, 1UL<colindex>, 1UL; 1UL<rowindex>, 0UL<colindex>, 1UL
-             0UL<rowindex>, 2UL<colindex>, 2UL; 2UL<rowindex>, 0UL<colindex>, 2UL
-             0UL<rowindex>, 3UL<colindex>, 3UL; 3UL<rowindex>, 0UL<colindex>, 3UL
-             0UL<rowindex>, 4UL<colindex>, 4UL; 4UL<rowindex>, 0UL<colindex>, 4UL
-             1UL<rowindex>, 2UL<colindex>, 5UL; 2UL<rowindex>, 1UL<colindex>, 5UL
-             1UL<rowindex>, 3UL<colindex>, 6UL; 3UL<rowindex>, 1UL<colindex>, 6UL
-             1UL<rowindex>, 4UL<colindex>, 7UL; 4UL<rowindex>, 1UL<colindex>, 7UL
-             2UL<rowindex>, 3UL<colindex>, 8UL; 3UL<rowindex>, 2UL<colindex>, 8UL
-             2UL<rowindex>, 4UL<colindex>, 9UL; 4UL<rowindex>, 2UL<colindex>, 9UL
-             3UL<rowindex>, 4UL<colindex>,10UL; 4UL<rowindex>, 3UL<colindex>,10UL]
+            [ 0UL<rowindex>, 1UL<colindex>, 1UL
+              1UL<rowindex>, 0UL<colindex>, 1UL
+              0UL<rowindex>, 2UL<colindex>, 2UL
+              2UL<rowindex>, 0UL<colindex>, 2UL
+              0UL<rowindex>, 3UL<colindex>, 3UL
+              3UL<rowindex>, 0UL<colindex>, 3UL
+              0UL<rowindex>, 4UL<colindex>, 4UL
+              4UL<rowindex>, 0UL<colindex>, 4UL
+              1UL<rowindex>, 2UL<colindex>, 5UL
+              2UL<rowindex>, 1UL<colindex>, 5UL
+              1UL<rowindex>, 3UL<colindex>, 6UL
+              3UL<rowindex>, 1UL<colindex>, 6UL
+              1UL<rowindex>, 4UL<colindex>, 7UL
+              4UL<rowindex>, 1UL<colindex>, 7UL
+              2UL<rowindex>, 3UL<colindex>, 8UL
+              3UL<rowindex>, 2UL<colindex>, 8UL
+              2UL<rowindex>, 4UL<colindex>, 9UL
+              4UL<rowindex>, 2UL<colindex>, 9UL
+              3UL<rowindex>, 4UL<colindex>, 10UL
+              4UL<rowindex>, 3UL<colindex>, 10UL ]
         )
     )
 
@@ -590,15 +600,24 @@ let private k33graph =
         Matrix.CoordinateList(
             6UL<nrows>,
             6UL<ncols>,
-            [0UL<rowindex>, 3UL<colindex>, 1UL; 3UL<rowindex>, 0UL<colindex>, 1UL
-             0UL<rowindex>, 4UL<colindex>, 2UL; 4UL<rowindex>, 0UL<colindex>, 2UL
-             0UL<rowindex>, 5UL<colindex>, 3UL; 5UL<rowindex>, 0UL<colindex>, 3UL
-             1UL<rowindex>, 3UL<colindex>, 4UL; 3UL<rowindex>, 1UL<colindex>, 4UL
-             1UL<rowindex>, 4UL<colindex>, 5UL; 4UL<rowindex>, 1UL<colindex>, 5UL
-             1UL<rowindex>, 5UL<colindex>, 6UL; 5UL<rowindex>, 1UL<colindex>, 6UL
-             2UL<rowindex>, 3UL<colindex>, 7UL; 3UL<rowindex>, 2UL<colindex>, 7UL
-             2UL<rowindex>, 4UL<colindex>, 8UL; 4UL<rowindex>, 2UL<colindex>, 8UL
-             2UL<rowindex>, 5UL<colindex>, 9UL; 5UL<rowindex>, 2UL<colindex>, 9UL]
+            [ 0UL<rowindex>, 3UL<colindex>, 1UL
+              3UL<rowindex>, 0UL<colindex>, 1UL
+              0UL<rowindex>, 4UL<colindex>, 2UL
+              4UL<rowindex>, 0UL<colindex>, 2UL
+              0UL<rowindex>, 5UL<colindex>, 3UL
+              5UL<rowindex>, 0UL<colindex>, 3UL
+              1UL<rowindex>, 3UL<colindex>, 4UL
+              3UL<rowindex>, 1UL<colindex>, 4UL
+              1UL<rowindex>, 4UL<colindex>, 5UL
+              4UL<rowindex>, 1UL<colindex>, 5UL
+              1UL<rowindex>, 5UL<colindex>, 6UL
+              5UL<rowindex>, 1UL<colindex>, 6UL
+              2UL<rowindex>, 3UL<colindex>, 7UL
+              3UL<rowindex>, 2UL<colindex>, 7UL
+              2UL<rowindex>, 4UL<colindex>, 8UL
+              4UL<rowindex>, 2UL<colindex>, 8UL
+              2UL<rowindex>, 5UL<colindex>, 9UL
+              5UL<rowindex>, 2UL<colindex>, 9UL ]
         )
     )
 
@@ -651,19 +670,32 @@ let private random8graph =
         Matrix.CoordinateList(
             8UL<nrows>,
             8UL<ncols>,
-            [0UL<rowindex>, 1UL<colindex>, 7UL; 1UL<rowindex>, 0UL<colindex>, 7UL
-             0UL<rowindex>, 2UL<colindex>, 5UL; 2UL<rowindex>, 0UL<colindex>, 5UL
-             0UL<rowindex>, 3UL<colindex>, 9UL; 3UL<rowindex>, 0UL<colindex>, 9UL
-             1UL<rowindex>, 2UL<colindex>, 3UL; 2UL<rowindex>, 1UL<colindex>, 3UL
-             1UL<rowindex>, 3UL<colindex>, 4UL; 3UL<rowindex>, 1UL<colindex>, 4UL
-             2UL<rowindex>, 3UL<colindex>, 2UL; 3UL<rowindex>, 2UL<colindex>, 2UL
-             4UL<rowindex>, 5UL<colindex>, 1UL; 5UL<rowindex>, 4UL<colindex>, 1UL
-             4UL<rowindex>, 6UL<colindex>, 6UL; 6UL<rowindex>, 4UL<colindex>, 6UL
-             4UL<rowindex>, 7UL<colindex>, 8UL; 7UL<rowindex>, 4UL<colindex>, 8UL
-             5UL<rowindex>, 6UL<colindex>, 3UL; 6UL<rowindex>, 5UL<colindex>, 3UL
-             5UL<rowindex>, 7UL<colindex>, 5UL; 7UL<rowindex>, 5UL<colindex>, 5UL
-             6UL<rowindex>, 7UL<colindex>, 2UL; 7UL<rowindex>, 6UL<colindex>, 2UL
-             3UL<rowindex>, 4UL<colindex>,10UL; 4UL<rowindex>, 3UL<colindex>,10UL]
+            [ 0UL<rowindex>, 1UL<colindex>, 7UL
+              1UL<rowindex>, 0UL<colindex>, 7UL
+              0UL<rowindex>, 2UL<colindex>, 5UL
+              2UL<rowindex>, 0UL<colindex>, 5UL
+              0UL<rowindex>, 3UL<colindex>, 9UL
+              3UL<rowindex>, 0UL<colindex>, 9UL
+              1UL<rowindex>, 2UL<colindex>, 3UL
+              2UL<rowindex>, 1UL<colindex>, 3UL
+              1UL<rowindex>, 3UL<colindex>, 4UL
+              3UL<rowindex>, 1UL<colindex>, 4UL
+              2UL<rowindex>, 3UL<colindex>, 2UL
+              3UL<rowindex>, 2UL<colindex>, 2UL
+              4UL<rowindex>, 5UL<colindex>, 1UL
+              5UL<rowindex>, 4UL<colindex>, 1UL
+              4UL<rowindex>, 6UL<colindex>, 6UL
+              6UL<rowindex>, 4UL<colindex>, 6UL
+              4UL<rowindex>, 7UL<colindex>, 8UL
+              7UL<rowindex>, 4UL<colindex>, 8UL
+              5UL<rowindex>, 6UL<colindex>, 3UL
+              6UL<rowindex>, 5UL<colindex>, 3UL
+              5UL<rowindex>, 7UL<colindex>, 5UL
+              7UL<rowindex>, 5UL<colindex>, 5UL
+              6UL<rowindex>, 7UL<colindex>, 2UL
+              7UL<rowindex>, 6UL<colindex>, 2UL
+              3UL<rowindex>, 4UL<colindex>, 10UL
+              4UL<rowindex>, 3UL<colindex>, 10UL ]
         )
     )
 
@@ -672,42 +704,114 @@ let ``Level bfs 8 node random start 0`` () =
     let n = uint64 random8graph.ncols
     let start = singleStart n 0UL
     let result = Graph.BFS.bfs_level random8graph start
-    Assert.Equal(Ok [ Some 0UL; Some 1UL; Some 1UL; Some 1UL; Some 2UL; Some 3UL; Some 3UL; Some 3UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 0UL
+              Some 1UL
+              Some 1UL
+              Some 1UL
+              Some 2UL
+              Some 3UL
+              Some 3UL
+              Some 3UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Parent bfs 8 node random start 0`` () =
     let n = uint64 random8graph.ncols
     let start = singleStart n 0UL
     let result = Graph.BFS.bfs_parent random8graph start
-    Assert.Equal(Ok [ Some 0UL; Some 0UL; Some 0UL; Some 0UL; Some 3UL; Some 4UL; Some 4UL; Some 4UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 0UL
+              Some 0UL
+              Some 0UL
+              Some 0UL
+              Some 3UL
+              Some 4UL
+              Some 4UL
+              Some 4UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Level bfs 8 node random start 7`` () =
     let n = uint64 random8graph.ncols
     let start = singleStart n 7UL
     let result = Graph.BFS.bfs_level random8graph start
-    Assert.Equal(Ok [ Some 3UL; Some 3UL; Some 3UL; Some 2UL; Some 1UL; Some 1UL; Some 1UL; Some 0UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 3UL
+              Some 3UL
+              Some 3UL
+              Some 2UL
+              Some 1UL
+              Some 1UL
+              Some 1UL
+              Some 0UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Parent bfs 8 node random start 7`` () =
     let n = uint64 random8graph.ncols
     let start = singleStart n 7UL
     let result = Graph.BFS.bfs_parent random8graph start
-    Assert.Equal(Ok [ Some 3UL; Some 3UL; Some 3UL; Some 4UL; Some 7UL; Some 7UL; Some 7UL; Some 7UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 3UL
+              Some 3UL
+              Some 3UL
+              Some 4UL
+              Some 7UL
+              Some 7UL
+              Some 7UL
+              Some 7UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Level bfs 8 node random start 4`` () =
     let n = uint64 random8graph.ncols
     let start = singleStart n 4UL
     let result = Graph.BFS.bfs_level random8graph start
-    Assert.Equal(Ok [ Some 2UL; Some 2UL; Some 2UL; Some 1UL; Some 0UL; Some 1UL; Some 1UL; Some 1UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 2UL
+              Some 2UL
+              Some 2UL
+              Some 1UL
+              Some 0UL
+              Some 1UL
+              Some 1UL
+              Some 1UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Parent bfs 8 node random start 4`` () =
     let n = uint64 random8graph.ncols
     let start = singleStart n 4UL
     let result = Graph.BFS.bfs_parent random8graph start
-    Assert.Equal(Ok [ Some 3UL; Some 3UL; Some 3UL; Some 4UL; Some 4UL; Some 4UL; Some 4UL; Some 4UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 3UL
+              Some 3UL
+              Some 3UL
+              Some 4UL
+              Some 4UL
+              Some 4UL
+              Some 4UL
+              Some 4UL ],
+        Result.map (unsafes n) result
+    )
 
 // ============== 8 nodes grid ==============
 
@@ -716,16 +820,26 @@ let private grid8graph =
         Matrix.CoordinateList(
             8UL<nrows>,
             8UL<ncols>,
-            [0UL<rowindex>, 1UL<colindex>, 1UL; 1UL<rowindex>, 0UL<colindex>, 1UL
-             1UL<rowindex>, 2UL<colindex>, 2UL; 2UL<rowindex>, 1UL<colindex>, 2UL
-             2UL<rowindex>, 3UL<colindex>, 1UL; 3UL<rowindex>, 2UL<colindex>, 1UL
-             0UL<rowindex>, 4UL<colindex>, 3UL; 4UL<rowindex>, 0UL<colindex>, 3UL
-             1UL<rowindex>, 5UL<colindex>, 4UL; 5UL<rowindex>, 1UL<colindex>, 4UL
-             2UL<rowindex>, 6UL<colindex>, 5UL; 6UL<rowindex>, 2UL<colindex>, 5UL
-             3UL<rowindex>, 7UL<colindex>, 6UL; 7UL<rowindex>, 3UL<colindex>, 6UL
-             4UL<rowindex>, 5UL<colindex>, 2UL; 5UL<rowindex>, 4UL<colindex>, 2UL
-             5UL<rowindex>, 6UL<colindex>, 1UL; 6UL<rowindex>, 5UL<colindex>, 1UL
-             6UL<rowindex>, 7UL<colindex>, 3UL; 7UL<rowindex>, 6UL<colindex>, 3UL]
+            [ 0UL<rowindex>, 1UL<colindex>, 1UL
+              1UL<rowindex>, 0UL<colindex>, 1UL
+              1UL<rowindex>, 2UL<colindex>, 2UL
+              2UL<rowindex>, 1UL<colindex>, 2UL
+              2UL<rowindex>, 3UL<colindex>, 1UL
+              3UL<rowindex>, 2UL<colindex>, 1UL
+              0UL<rowindex>, 4UL<colindex>, 3UL
+              4UL<rowindex>, 0UL<colindex>, 3UL
+              1UL<rowindex>, 5UL<colindex>, 4UL
+              5UL<rowindex>, 1UL<colindex>, 4UL
+              2UL<rowindex>, 6UL<colindex>, 5UL
+              6UL<rowindex>, 2UL<colindex>, 5UL
+              3UL<rowindex>, 7UL<colindex>, 6UL
+              7UL<rowindex>, 3UL<colindex>, 6UL
+              4UL<rowindex>, 5UL<colindex>, 2UL
+              5UL<rowindex>, 4UL<colindex>, 2UL
+              5UL<rowindex>, 6UL<colindex>, 1UL
+              6UL<rowindex>, 5UL<colindex>, 1UL
+              6UL<rowindex>, 7UL<colindex>, 3UL
+              7UL<rowindex>, 6UL<colindex>, 3UL ]
         )
     )
 
@@ -734,42 +848,114 @@ let ``Level bfs 8 node grid start 0`` () =
     let n = uint64 grid8graph.ncols
     let start = singleStart n 0UL
     let result = Graph.BFS.bfs_level grid8graph start
-    Assert.Equal(Ok [ Some 0UL; Some 1UL; Some 2UL; Some 3UL; Some 1UL; Some 2UL; Some 3UL; Some 4UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 0UL
+              Some 1UL
+              Some 2UL
+              Some 3UL
+              Some 1UL
+              Some 2UL
+              Some 3UL
+              Some 4UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Parent bfs 8 node grid start 0`` () =
     let n = uint64 grid8graph.ncols
     let start = singleStart n 0UL
     let result = Graph.BFS.bfs_parent grid8graph start
-    Assert.Equal(Ok [ Some 0UL; Some 0UL; Some 1UL; Some 2UL; Some 0UL; Some 1UL; Some 2UL; Some 3UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 0UL
+              Some 0UL
+              Some 1UL
+              Some 2UL
+              Some 0UL
+              Some 1UL
+              Some 2UL
+              Some 3UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Level bfs 8 node grid start 7`` () =
     let n = uint64 grid8graph.ncols
     let start = singleStart n 7UL
     let result = Graph.BFS.bfs_level grid8graph start
-    Assert.Equal(Ok [ Some 4UL; Some 3UL; Some 2UL; Some 1UL; Some 3UL; Some 2UL; Some 1UL; Some 0UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 4UL
+              Some 3UL
+              Some 2UL
+              Some 1UL
+              Some 3UL
+              Some 2UL
+              Some 1UL
+              Some 0UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Parent bfs 8 node grid start 7`` () =
     let n = uint64 grid8graph.ncols
     let start = singleStart n 7UL
     let result = Graph.BFS.bfs_parent grid8graph start
-    Assert.Equal(Ok [ Some 1UL; Some 2UL; Some 3UL; Some 7UL; Some 5UL; Some 6UL; Some 7UL; Some 7UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 1UL
+              Some 2UL
+              Some 3UL
+              Some 7UL
+              Some 5UL
+              Some 6UL
+              Some 7UL
+              Some 7UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Level bfs 8 node grid start 4`` () =
     let n = uint64 grid8graph.ncols
     let start = singleStart n 4UL
     let result = Graph.BFS.bfs_level grid8graph start
-    Assert.Equal(Ok [ Some 1UL; Some 2UL; Some 3UL; Some 4UL; Some 0UL; Some 1UL; Some 2UL; Some 3UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 1UL
+              Some 2UL
+              Some 3UL
+              Some 4UL
+              Some 0UL
+              Some 1UL
+              Some 2UL
+              Some 3UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Parent bfs 8 node grid start 4`` () =
     let n = uint64 grid8graph.ncols
     let start = singleStart n 4UL
     let result = Graph.BFS.bfs_parent grid8graph start
-    Assert.Equal(Ok [ Some 4UL; Some 0UL; Some 1UL; Some 2UL; Some 4UL; Some 4UL; Some 5UL; Some 6UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 4UL
+              Some 0UL
+              Some 1UL
+              Some 2UL
+              Some 4UL
+              Some 4UL
+              Some 5UL
+              Some 6UL ],
+        Result.map (unsafes n) result
+    )
 
 // ============== 10 nodes random ==============
 
@@ -778,19 +964,32 @@ let private random10graph =
         Matrix.CoordinateList(
             10UL<nrows>,
             10UL<ncols>,
-            [0UL<rowindex>, 1UL<colindex>, 4UL; 1UL<rowindex>, 0UL<colindex>, 4UL
-             0UL<rowindex>, 5UL<colindex>, 2UL; 5UL<rowindex>, 0UL<colindex>, 2UL
-             1UL<rowindex>, 2UL<colindex>, 3UL; 2UL<rowindex>, 1UL<colindex>, 3UL
-             1UL<rowindex>, 6UL<colindex>, 5UL; 6UL<rowindex>, 1UL<colindex>, 5UL
-             2UL<rowindex>, 3UL<colindex>, 1UL; 3UL<rowindex>, 2UL<colindex>, 1UL
-             2UL<rowindex>, 7UL<colindex>, 4UL; 7UL<rowindex>, 2UL<colindex>, 4UL
-             3UL<rowindex>, 4UL<colindex>, 2UL; 4UL<rowindex>, 3UL<colindex>, 2UL
-             3UL<rowindex>, 8UL<colindex>, 6UL; 8UL<rowindex>, 3UL<colindex>, 6UL
-             4UL<rowindex>, 9UL<colindex>, 3UL; 9UL<rowindex>, 4UL<colindex>, 3UL
-             5UL<rowindex>, 6UL<colindex>, 1UL; 6UL<rowindex>, 5UL<colindex>, 1UL
-             6UL<rowindex>, 7UL<colindex>, 2UL; 7UL<rowindex>, 6UL<colindex>, 2UL
-             7UL<rowindex>, 8UL<colindex>, 1UL; 8UL<rowindex>, 7UL<colindex>, 1UL
-             8UL<rowindex>, 9UL<colindex>, 4UL; 9UL<rowindex>, 8UL<colindex>, 4UL]
+            [ 0UL<rowindex>, 1UL<colindex>, 4UL
+              1UL<rowindex>, 0UL<colindex>, 4UL
+              0UL<rowindex>, 5UL<colindex>, 2UL
+              5UL<rowindex>, 0UL<colindex>, 2UL
+              1UL<rowindex>, 2UL<colindex>, 3UL
+              2UL<rowindex>, 1UL<colindex>, 3UL
+              1UL<rowindex>, 6UL<colindex>, 5UL
+              6UL<rowindex>, 1UL<colindex>, 5UL
+              2UL<rowindex>, 3UL<colindex>, 1UL
+              3UL<rowindex>, 2UL<colindex>, 1UL
+              2UL<rowindex>, 7UL<colindex>, 4UL
+              7UL<rowindex>, 2UL<colindex>, 4UL
+              3UL<rowindex>, 4UL<colindex>, 2UL
+              4UL<rowindex>, 3UL<colindex>, 2UL
+              3UL<rowindex>, 8UL<colindex>, 6UL
+              8UL<rowindex>, 3UL<colindex>, 6UL
+              4UL<rowindex>, 9UL<colindex>, 3UL
+              9UL<rowindex>, 4UL<colindex>, 3UL
+              5UL<rowindex>, 6UL<colindex>, 1UL
+              6UL<rowindex>, 5UL<colindex>, 1UL
+              6UL<rowindex>, 7UL<colindex>, 2UL
+              7UL<rowindex>, 6UL<colindex>, 2UL
+              7UL<rowindex>, 8UL<colindex>, 1UL
+              8UL<rowindex>, 7UL<colindex>, 1UL
+              8UL<rowindex>, 9UL<colindex>, 4UL
+              9UL<rowindex>, 8UL<colindex>, 4UL ]
         )
     )
 
@@ -799,42 +998,126 @@ let ``Level bfs 10 node random start 0`` () =
     let n = uint64 random10graph.ncols
     let start = singleStart n 0UL
     let result = Graph.BFS.bfs_level random10graph start
-    Assert.Equal(Ok [ Some 0UL; Some 1UL; Some 2UL; Some 3UL; Some 4UL; Some 1UL; Some 2UL; Some 3UL; Some 4UL; Some 5UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 0UL
+              Some 1UL
+              Some 2UL
+              Some 3UL
+              Some 4UL
+              Some 1UL
+              Some 2UL
+              Some 3UL
+              Some 4UL
+              Some 5UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Parent bfs 10 node random start 0`` () =
     let n = uint64 random10graph.ncols
     let start = singleStart n 0UL
     let result = Graph.BFS.bfs_parent random10graph start
-    Assert.Equal(Ok [ Some 0UL; Some 0UL; Some 1UL; Some 2UL; Some 3UL; Some 0UL; Some 1UL; Some 2UL; Some 3UL; Some 4UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 0UL
+              Some 0UL
+              Some 1UL
+              Some 2UL
+              Some 3UL
+              Some 0UL
+              Some 1UL
+              Some 2UL
+              Some 3UL
+              Some 4UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Level bfs 10 node random start 9`` () =
     let n = uint64 random10graph.ncols
     let start = singleStart n 9UL
     let result = Graph.BFS.bfs_level random10graph start
-    Assert.Equal(Ok [ Some 5UL; Some 4UL; Some 3UL; Some 2UL; Some 1UL; Some 4UL; Some 3UL; Some 2UL; Some 1UL; Some 0UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 5UL
+              Some 4UL
+              Some 3UL
+              Some 2UL
+              Some 1UL
+              Some 4UL
+              Some 3UL
+              Some 2UL
+              Some 1UL
+              Some 0UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Parent bfs 10 node random start 9`` () =
     let n = uint64 random10graph.ncols
     let start = singleStart n 9UL
     let result = Graph.BFS.bfs_parent random10graph start
-    Assert.Equal(Ok [ Some 1UL; Some 2UL; Some 3UL; Some 4UL; Some 9UL; Some 6UL; Some 7UL; Some 8UL; Some 9UL; Some 9UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 1UL
+              Some 2UL
+              Some 3UL
+              Some 4UL
+              Some 9UL
+              Some 6UL
+              Some 7UL
+              Some 8UL
+              Some 9UL
+              Some 9UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Level bfs 10 node random start 5`` () =
     let n = uint64 random10graph.ncols
     let start = singleStart n 5UL
     let result = Graph.BFS.bfs_level random10graph start
-    Assert.Equal(Ok [ Some 1UL; Some 2UL; Some 3UL; Some 4UL; Some 5UL; Some 0UL; Some 1UL; Some 2UL; Some 3UL; Some 4UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 1UL
+              Some 2UL
+              Some 3UL
+              Some 4UL
+              Some 5UL
+              Some 0UL
+              Some 1UL
+              Some 2UL
+              Some 3UL
+              Some 4UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Parent bfs 10 node random start 5`` () =
     let n = uint64 random10graph.ncols
     let start = singleStart n 5UL
     let result = Graph.BFS.bfs_parent random10graph start
-    Assert.Equal(Ok [ Some 5UL; Some 0UL; Some 1UL; Some 2UL; Some 3UL; Some 5UL; Some 5UL; Some 6UL; Some 7UL; Some 8UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 5UL
+              Some 0UL
+              Some 1UL
+              Some 2UL
+              Some 3UL
+              Some 5UL
+              Some 5UL
+              Some 6UL
+              Some 7UL
+              Some 8UL ],
+        Result.map (unsafes n) result
+    )
 
 // ============== 12 nodes big ==============
 
@@ -843,24 +1126,42 @@ let private big12graph =
         Matrix.CoordinateList(
             12UL<nrows>,
             12UL<ncols>,
-            [0UL<rowindex>, 1UL<colindex>, 1UL; 1UL<rowindex>, 0UL<colindex>, 1UL
-             1UL<rowindex>, 11UL<colindex>, 1UL; 11UL<rowindex>, 1UL<colindex>, 1UL
-             0UL<rowindex>, 11UL<colindex>, 1UL; 11UL<rowindex>, 0UL<colindex>, 1UL
-             2UL<rowindex>, 3UL<colindex>, 1UL; 3UL<rowindex>, 2UL<colindex>, 1UL
-             3UL<rowindex>, 4UL<colindex>, 1UL; 4UL<rowindex>, 3UL<colindex>, 1UL
-             2UL<rowindex>, 4UL<colindex>, 1UL; 4UL<rowindex>, 2UL<colindex>, 1UL
-             5UL<rowindex>, 6UL<colindex>, 1UL; 6UL<rowindex>, 5UL<colindex>, 1UL
-             6UL<rowindex>, 7UL<colindex>, 1UL; 7UL<rowindex>, 6UL<colindex>, 1UL
-             5UL<rowindex>, 7UL<colindex>, 1UL; 7UL<rowindex>, 5UL<colindex>, 1UL
-             8UL<rowindex>, 9UL<colindex>, 1UL; 9UL<rowindex>, 8UL<colindex>, 1UL
-             9UL<rowindex>, 10UL<colindex>, 1UL; 10UL<rowindex>, 9UL<colindex>, 1UL
-             8UL<rowindex>, 10UL<colindex>, 1UL; 10UL<rowindex>, 8UL<colindex>, 1UL
-             1UL<rowindex>, 2UL<colindex>, 2UL; 2UL<rowindex>, 1UL<colindex>, 2UL
-             11UL<rowindex>, 4UL<colindex>, 2UL; 4UL<rowindex>, 11UL<colindex>, 2UL
-             10UL<rowindex>, 5UL<colindex>, 2UL; 5UL<rowindex>, 10UL<colindex>, 2UL
-             8UL<rowindex>, 7UL<colindex>, 2UL; 7UL<rowindex>, 8UL<colindex>, 2UL
-             10UL<rowindex>, 11UL<colindex>, 3UL; 11UL<rowindex>, 10UL<colindex>, 3UL
-             5UL<rowindex>, 4UL<colindex>, 3UL; 4UL<rowindex>, 5UL<colindex>, 3UL]
+            [ 0UL<rowindex>, 1UL<colindex>, 1UL
+              1UL<rowindex>, 0UL<colindex>, 1UL
+              1UL<rowindex>, 11UL<colindex>, 1UL
+              11UL<rowindex>, 1UL<colindex>, 1UL
+              0UL<rowindex>, 11UL<colindex>, 1UL
+              11UL<rowindex>, 0UL<colindex>, 1UL
+              2UL<rowindex>, 3UL<colindex>, 1UL
+              3UL<rowindex>, 2UL<colindex>, 1UL
+              3UL<rowindex>, 4UL<colindex>, 1UL
+              4UL<rowindex>, 3UL<colindex>, 1UL
+              2UL<rowindex>, 4UL<colindex>, 1UL
+              4UL<rowindex>, 2UL<colindex>, 1UL
+              5UL<rowindex>, 6UL<colindex>, 1UL
+              6UL<rowindex>, 5UL<colindex>, 1UL
+              6UL<rowindex>, 7UL<colindex>, 1UL
+              7UL<rowindex>, 6UL<colindex>, 1UL
+              5UL<rowindex>, 7UL<colindex>, 1UL
+              7UL<rowindex>, 5UL<colindex>, 1UL
+              8UL<rowindex>, 9UL<colindex>, 1UL
+              9UL<rowindex>, 8UL<colindex>, 1UL
+              9UL<rowindex>, 10UL<colindex>, 1UL
+              10UL<rowindex>, 9UL<colindex>, 1UL
+              8UL<rowindex>, 10UL<colindex>, 1UL
+              10UL<rowindex>, 8UL<colindex>, 1UL
+              1UL<rowindex>, 2UL<colindex>, 2UL
+              2UL<rowindex>, 1UL<colindex>, 2UL
+              11UL<rowindex>, 4UL<colindex>, 2UL
+              4UL<rowindex>, 11UL<colindex>, 2UL
+              10UL<rowindex>, 5UL<colindex>, 2UL
+              5UL<rowindex>, 10UL<colindex>, 2UL
+              8UL<rowindex>, 7UL<colindex>, 2UL
+              7UL<rowindex>, 8UL<colindex>, 2UL
+              10UL<rowindex>, 11UL<colindex>, 3UL
+              11UL<rowindex>, 10UL<colindex>, 3UL
+              5UL<rowindex>, 4UL<colindex>, 3UL
+              4UL<rowindex>, 5UL<colindex>, 3UL ]
         )
     )
 
@@ -869,42 +1170,138 @@ let ``Level bfs 12 node big start 0`` () =
     let n = uint64 big12graph.ncols
     let start = singleStart n 0UL
     let result = Graph.BFS.bfs_level big12graph start
-    Assert.Equal(Ok [ Some 0UL; Some 1UL; Some 2UL; Some 3UL; Some 2UL; Some 3UL; Some 4UL; Some 4UL; Some 3UL; Some 3UL; Some 2UL; Some 1UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 0UL
+              Some 1UL
+              Some 2UL
+              Some 3UL
+              Some 2UL
+              Some 3UL
+              Some 4UL
+              Some 4UL
+              Some 3UL
+              Some 3UL
+              Some 2UL
+              Some 1UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Parent bfs 12 node big start 0`` () =
     let n = uint64 big12graph.ncols
     let start = singleStart n 0UL
     let result = Graph.BFS.bfs_parent big12graph start
-    Assert.Equal(Ok [ Some 0UL; Some 0UL; Some 1UL; Some 2UL; Some 11UL; Some 4UL; Some 5UL; Some 5UL; Some 10UL; Some 10UL; Some 11UL; Some 0UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 0UL
+              Some 0UL
+              Some 1UL
+              Some 2UL
+              Some 11UL
+              Some 4UL
+              Some 5UL
+              Some 5UL
+              Some 10UL
+              Some 10UL
+              Some 11UL
+              Some 0UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Level bfs 12 node big start 11`` () =
     let n = uint64 big12graph.ncols
     let start = singleStart n 11UL
     let result = Graph.BFS.bfs_level big12graph start
-    Assert.Equal(Ok [ Some 1UL; Some 1UL; Some 2UL; Some 2UL; Some 1UL; Some 2UL; Some 3UL; Some 3UL; Some 2UL; Some 2UL; Some 1UL; Some 0UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 1UL
+              Some 1UL
+              Some 2UL
+              Some 2UL
+              Some 1UL
+              Some 2UL
+              Some 3UL
+              Some 3UL
+              Some 2UL
+              Some 2UL
+              Some 1UL
+              Some 0UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Parent bfs 12 node big start 11`` () =
     let n = uint64 big12graph.ncols
     let start = singleStart n 11UL
     let result = Graph.BFS.bfs_parent big12graph start
-    Assert.Equal(Ok [ Some 11UL; Some 11UL; Some 1UL; Some 4UL; Some 11UL; Some 4UL; Some 5UL; Some 5UL; Some 10UL; Some 10UL; Some 11UL; Some 11UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 11UL
+              Some 11UL
+              Some 1UL
+              Some 4UL
+              Some 11UL
+              Some 4UL
+              Some 5UL
+              Some 5UL
+              Some 10UL
+              Some 10UL
+              Some 11UL
+              Some 11UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Level bfs 12 node big start 6`` () =
     let n = uint64 big12graph.ncols
     let start = singleStart n 6UL
     let result = Graph.BFS.bfs_level big12graph start
-    Assert.Equal(Ok [ Some 4UL; Some 4UL; Some 3UL; Some 3UL; Some 2UL; Some 1UL; Some 0UL; Some 1UL; Some 2UL; Some 3UL; Some 2UL; Some 3UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 4UL
+              Some 4UL
+              Some 3UL
+              Some 3UL
+              Some 2UL
+              Some 1UL
+              Some 0UL
+              Some 1UL
+              Some 2UL
+              Some 3UL
+              Some 2UL
+              Some 3UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Parent bfs 12 node big start 6`` () =
     let n = uint64 big12graph.ncols
     let start = singleStart n 6UL
     let result = Graph.BFS.bfs_parent big12graph start
-    Assert.Equal(Ok [ Some 11UL; Some 2UL; Some 4UL; Some 4UL; Some 5UL; Some 6UL; Some 6UL; Some 6UL; Some 7UL; Some 8UL; Some 5UL; Some 4UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 11UL
+              Some 2UL
+              Some 4UL
+              Some 4UL
+              Some 5UL
+              Some 6UL
+              Some 6UL
+              Some 6UL
+              Some 7UL
+              Some 8UL
+              Some 5UL
+              Some 4UL ],
+        Result.map (unsafes n) result
+    )
 
 // ============== 10 nodes complex line ==============
 
@@ -913,15 +1310,24 @@ let private complexLine10graph =
         Matrix.CoordinateList(
             10UL<nrows>,
             10UL<ncols>,
-            [0UL<rowindex>, 1UL<colindex>, 1UL; 1UL<rowindex>, 0UL<colindex>, 1UL
-             1UL<rowindex>, 2UL<colindex>, 2UL; 2UL<rowindex>, 1UL<colindex>, 2UL
-             2UL<rowindex>, 3UL<colindex>, 1UL; 3UL<rowindex>, 2UL<colindex>, 1UL
-             3UL<rowindex>, 4UL<colindex>, 3UL; 4UL<rowindex>, 3UL<colindex>, 3UL
-             4UL<rowindex>, 5UL<colindex>, 1UL; 5UL<rowindex>, 4UL<colindex>, 1UL
-             5UL<rowindex>, 6UL<colindex>, 1UL; 6UL<rowindex>, 5UL<colindex>, 1UL
-             6UL<rowindex>, 7UL<colindex>, 2UL; 7UL<rowindex>, 6UL<colindex>, 2UL
-             7UL<rowindex>, 8UL<colindex>, 1UL; 8UL<rowindex>, 7UL<colindex>, 1UL
-             8UL<rowindex>, 9UL<colindex>, 1UL; 9UL<rowindex>, 8UL<colindex>, 1UL]
+            [ 0UL<rowindex>, 1UL<colindex>, 1UL
+              1UL<rowindex>, 0UL<colindex>, 1UL
+              1UL<rowindex>, 2UL<colindex>, 2UL
+              2UL<rowindex>, 1UL<colindex>, 2UL
+              2UL<rowindex>, 3UL<colindex>, 1UL
+              3UL<rowindex>, 2UL<colindex>, 1UL
+              3UL<rowindex>, 4UL<colindex>, 3UL
+              4UL<rowindex>, 3UL<colindex>, 3UL
+              4UL<rowindex>, 5UL<colindex>, 1UL
+              5UL<rowindex>, 4UL<colindex>, 1UL
+              5UL<rowindex>, 6UL<colindex>, 1UL
+              6UL<rowindex>, 5UL<colindex>, 1UL
+              6UL<rowindex>, 7UL<colindex>, 2UL
+              7UL<rowindex>, 6UL<colindex>, 2UL
+              7UL<rowindex>, 8UL<colindex>, 1UL
+              8UL<rowindex>, 7UL<colindex>, 1UL
+              8UL<rowindex>, 9UL<colindex>, 1UL
+              9UL<rowindex>, 8UL<colindex>, 1UL ]
         )
     )
 
@@ -930,41 +1336,123 @@ let ``Level bfs 10 node complex line start 0`` () =
     let n = uint64 complexLine10graph.ncols
     let start = singleStart n 0UL
     let result = Graph.BFS.bfs_level complexLine10graph start
-    Assert.Equal(Ok [ Some 0UL; Some 1UL; Some 2UL; Some 3UL; Some 4UL; Some 5UL; Some 6UL; Some 7UL; Some 8UL; Some 9UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 0UL
+              Some 1UL
+              Some 2UL
+              Some 3UL
+              Some 4UL
+              Some 5UL
+              Some 6UL
+              Some 7UL
+              Some 8UL
+              Some 9UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Parent bfs 10 node complex line start 0`` () =
     let n = uint64 complexLine10graph.ncols
     let start = singleStart n 0UL
     let result = Graph.BFS.bfs_parent complexLine10graph start
-    Assert.Equal(Ok [ Some 0UL; Some 0UL; Some 1UL; Some 2UL; Some 3UL; Some 4UL; Some 5UL; Some 6UL; Some 7UL; Some 8UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 0UL
+              Some 0UL
+              Some 1UL
+              Some 2UL
+              Some 3UL
+              Some 4UL
+              Some 5UL
+              Some 6UL
+              Some 7UL
+              Some 8UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Level bfs 10 node complex line start 9`` () =
     let n = uint64 complexLine10graph.ncols
     let start = singleStart n 9UL
     let result = Graph.BFS.bfs_level complexLine10graph start
-    Assert.Equal(Ok [ Some 9UL; Some 8UL; Some 7UL; Some 6UL; Some 5UL; Some 4UL; Some 3UL; Some 2UL; Some 1UL; Some 0UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 9UL
+              Some 8UL
+              Some 7UL
+              Some 6UL
+              Some 5UL
+              Some 4UL
+              Some 3UL
+              Some 2UL
+              Some 1UL
+              Some 0UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Parent bfs 10 node complex line start 9`` () =
     let n = uint64 complexLine10graph.ncols
     let start = singleStart n 9UL
     let result = Graph.BFS.bfs_parent complexLine10graph start
-    Assert.Equal(Ok [ Some 1UL; Some 2UL; Some 3UL; Some 4UL; Some 5UL; Some 6UL; Some 7UL; Some 8UL; Some 9UL; Some 9UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 1UL
+              Some 2UL
+              Some 3UL
+              Some 4UL
+              Some 5UL
+              Some 6UL
+              Some 7UL
+              Some 8UL
+              Some 9UL
+              Some 9UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Level bfs 10 node complex line start 5`` () =
     let n = uint64 complexLine10graph.ncols
     let start = singleStart n 5UL
     let result = Graph.BFS.bfs_level complexLine10graph start
-    Assert.Equal(Ok [ Some 5UL; Some 4UL; Some 3UL; Some 2UL; Some 1UL; Some 0UL; Some 1UL; Some 2UL; Some 3UL; Some 4UL ], Result.map (unsafes n) result)
+
+    Assert.Equal(
+        Ok
+            [ Some 5UL
+              Some 4UL
+              Some 3UL
+              Some 2UL
+              Some 1UL
+              Some 0UL
+              Some 1UL
+              Some 2UL
+              Some 3UL
+              Some 4UL ],
+        Result.map (unsafes n) result
+    )
 
 [<Fact>]
 let ``Parent bfs 10 node complex line start 5`` () =
     let n = uint64 complexLine10graph.ncols
     let start = singleStart n 5UL
     let result = Graph.BFS.bfs_parent complexLine10graph start
-    Assert.Equal(Ok [ Some 1UL; Some 2UL; Some 3UL; Some 4UL; Some 5UL; Some 5UL; Some 5UL; Some 6UL; Some 7UL; Some 8UL ], Result.map (unsafes n) result)
 
-
+    Assert.Equal(
+        Ok
+            [ Some 1UL
+              Some 2UL
+              Some 3UL
+              Some 4UL
+              Some 5UL
+              Some 5UL
+              Some 5UL
+              Some 6UL
+              Some 7UL
+              Some 8UL ],
+        Result.map (unsafes n) result
+    )

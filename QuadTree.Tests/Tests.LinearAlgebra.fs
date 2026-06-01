@@ -369,10 +369,7 @@ let ``vxmi_values 3x3 line graph start 0. BFS semantics`` () =
     //   [0, N, N, D]  =  Node(Node(0, N), Node(N, D))
     let f =
         let tree =
-            Vector.btree.Node(
-                Vector.btree.Node(vleaf_v 0UL, vleaf_n ()),
-                Vector.btree.Node(vleaf_n (), vleaf_d ())
-            )
+            Vector.btree.Node(Vector.btree.Node(vleaf_v 0UL, vleaf_n ()), Vector.btree.Node(vleaf_n (), vleaf_d ()))
 
         let store = Vector.Storage(4UL<storageSize>, tree)
         SparseVector(3UL<dataLength>, 1UL<nvals>, store)
@@ -388,10 +385,7 @@ let ``vxmi_values 3x3 line graph start 0. BFS semantics`` () =
     let expected =
         // result = [N, 1, N, D] = Node(Node(N, 1), Node(N, D))
         let tree =
-            Vector.btree.Node(
-                Vector.btree.Node(vleaf_n (), vleaf_v 1UL),
-                Vector.btree.Node(vleaf_n (), vleaf_d ())
-            )
+            Vector.btree.Node(Vector.btree.Node(vleaf_n (), vleaf_v 1UL), Vector.btree.Node(vleaf_n (), vleaf_d ()))
 
         let store = Vector.Storage(4UL<storageSize>, tree)
         Ok(SparseVector(3UL<dataLength>, 1UL<nvals>, store))
