@@ -306,7 +306,7 @@ let update (vector: SparseVector<_>) i v op =
     else
         Error Error.InconsistentSizeOfArguments
 
-let fromCoordinateList (lst: CoordinateList<'a>) : SparseVector<'a> =
+let fromCoordinateList (lst: CoordinateList<'a>) : Result<SparseVector<'a>, string> =
     let unique =
         lst.data
         |> List.groupBy fst
@@ -314,33 +314,33 @@ let fromCoordinateList (lst: CoordinateList<'a>) : SparseVector<'a> =
             let value = entries |> List.map snd |> List.last
             (idx, value))
 
-    if unique |> List.exists (fun (idx, _) -> uint64 idx >= uint64 lst.length) then
-        failwith "Index out of range"
+    if unique |> List.exists (fun (i, _) -> uint64 i >= uint64 lst.length) then
+        Error "Index out of range"
+    else
+        let length = lst.length
+        let nvals = (uint64 <| List.length lst.data) * 1UL<nvals>
+        let storageSize = (getNearestUpperPowerOfTwo <| uint64 length) * 1UL<storageSize>
 
-    let length = lst.length
-    let nvals = (uint64 <| List.length lst.data) * 1UL<nvals>
-    let storageSize = (getNearestUpperPowerOfTwo <| uint64 length) * 1UL<storageSize>
+        let rec traverse coordinates pointer size =
+            match coordinates with
+            | [] when uint64 (pointer + size) < uint64 (length) -> Leaf <| UserValue None, []
+            | [] when uint64 pointer >= uint64 length -> Leaf Dummy, []
+            | (idx, _) :: _ when idx > pointer + size -> Leaf <| UserValue None, coordinates
+            | (idx, value) :: xs when idx = pointer && size = 1UL<index> -> Leaf << UserValue <| Some value, xs
+            | _ ->
+                let halfSize = size / 2UL
 
-    let rec traverse coordinates pointer size =
-        match coordinates with
-        | [] when uint64 (pointer + size) < uint64 (length) -> Leaf <| UserValue None, []
-        | [] when uint64 pointer >= uint64 length -> Leaf Dummy, []
-        | (idx, _) :: _ when idx > pointer + size -> Leaf <| UserValue None, coordinates
-        | (idx, value) :: xs when idx = pointer && size = 1UL<index> -> Leaf << UserValue <| Some value, xs
-        | _ ->
-            let halfSize = size / 2UL
+                let left, lCoordinates = traverse coordinates pointer halfSize
+                let right, rCoordinates = traverse lCoordinates (pointer + halfSize) halfSize
 
-            let left, lCoordinates = traverse coordinates pointer halfSize
-            let right, rCoordinates = traverse lCoordinates (pointer + halfSize) halfSize
+                mkNode left right, rCoordinates
 
-            mkNode left right, rCoordinates
+        let sortedCoordinates = List.sort unique
 
-    let sortedCoordinates = List.sort unique
+        let tree, _ =
+            traverse sortedCoordinates 0UL<index> ((uint64 storageSize) * 1UL<index>)
 
-    let tree, _ =
-        traverse sortedCoordinates 0UL<index> ((uint64 storageSize) * 1UL<index>)
-
-    SparseVector(length, nvals, Storage(storageSize, tree))
+        Ok(SparseVector(length, nvals, Storage(storageSize, tree)))
 
 let toCoordinateList (vector: SparseVector<'a>) =
     let length = vector.length
@@ -364,7 +364,11 @@ let toCoordinateList (vector: SparseVector<'a>) =
     CoordinateList(length, lst)
 
 let empty length =
-    fromCoordinateList (CoordinateList(length, []))
+    match fromCoordinateList (CoordinateList(length, [])) with
+    | Ok v -> v
+    | Error _ ->
+        let storageSize = (getNearestUpperPowerOfTwo <| uint64 length) * 1UL<storageSize>
+        SparseVector(length, 0UL<nvals>, Storage(storageSize, Leaf Dummy))
 
 let foldValues (vector: SparseVector<'a>) (f: 'b -> 'a -> 'b) (state: 'b) =
     let rec inner state (size: uint64<storageSize>) vector =

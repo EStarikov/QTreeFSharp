@@ -11,15 +11,24 @@ let singleStart (n: uint64) (s: uint64) =
     Vector.CoordinateList(n * 1UL<Vector.dataLength>, [ s * 1UL<Vector.index>, 1UL ])
     |> Vector.fromCoordinateList
 
-let vec (n: uint64) pairs =
-    Vector.CoordinateList(
-        n * 1UL<Vector.dataLength>,
-        pairs |> List.map (fun (i: uint64, v: uint64) -> i * 1UL<Vector.index>, v)
-    )
-    |> Vector.fromCoordinateList
-
 let unsafes (n: uint64) (v: Vector.SparseVector<_>) =
     List.init (int n) (fun i -> Vector.unsafeGet v (uint64 i * 1UL<Vector.index>))
+
+let runTest
+    (graphResult: Result<Matrix.SparseMatrix<uint64>, string>)
+    (startResult: Result<Vector.SparseVector<uint64>, string>)
+    bfsFunc
+    expected
+    =
+    match graphResult with
+    | Error msg -> Assert.Fail $"Graph init failed: {msg}"
+    | Ok graph ->
+        match startResult with
+        | Error msg -> Assert.Fail $"Start init failed: {msg}"
+        | Ok start ->
+            let result = bfsFunc graph start
+            let n = uint64 graph.ncols
+            Assert.Equal(Ok expected, Result.map (unsafes n) result)
 
 [<Fact>]
 let ``Simple level bfs.`` () =
@@ -143,35 +152,19 @@ let private line3graph =
 
 [<Fact>]
 let ``Level bfs 3 node line start 0`` () =
-    let n = uint64 line3graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_level line3graph start
-    let expected = [ Some 0UL; Some 1UL; Some 2UL ]
-    Assert.Equal(Ok expected, Result.map (unsafes n) result)
+    runTest line3graph (singleStart 3UL 0UL) Graph.BFS.bfs_level [ Some 0UL; Some 1UL; Some 2UL ]
 
 [<Fact>]
 let ``Parent bfs 3 node line start 0`` () =
-    let n = uint64 line3graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_parent line3graph start
-    let expected = [ Some 0UL; Some 0UL; Some 1UL ]
-    Assert.Equal(Ok expected, Result.map (unsafes n) result)
+    runTest line3graph (singleStart 3UL 0UL) Graph.BFS.bfs_parent [ Some 0UL; Some 0UL; Some 1UL ]
 
 [<Fact>]
 let ``Level bfs 3 node line start 1`` () =
-    let n = uint64 line3graph.ncols
-    let start = singleStart n 1UL
-    let result = Graph.BFS.bfs_level line3graph start
-    let expected = [ Some 1UL; Some 0UL; Some 1UL ]
-    Assert.Equal(Ok expected, Result.map (unsafes n) result)
+    runTest line3graph (singleStart 3UL 1UL) Graph.BFS.bfs_level [ Some 1UL; Some 0UL; Some 1UL ]
 
 [<Fact>]
 let ``Parent bfs 3 node line start 1`` () =
-    let n = uint64 line3graph.ncols
-    let start = singleStart n 1UL
-    let result = Graph.BFS.bfs_parent line3graph start
-    let expected = [ Some 1UL; Some 1UL; Some 1UL ]
-    Assert.Equal(Ok expected, Result.map (unsafes n) result)
+    runTest line3graph (singleStart 3UL 1UL) Graph.BFS.bfs_parent [ Some 1UL; Some 1UL; Some 1UL ]
 
 // ============== 5-node star (center 0) ==============
 
@@ -193,35 +186,19 @@ let private star5graph =
 
 [<Fact>]
 let ``Level bfs 5 node star start center`` () =
-    let n = uint64 star5graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_level star5graph start
-    let expected = [ Some 0UL; Some 1UL; Some 1UL; Some 1UL; Some 1UL ]
-    Assert.Equal(Ok expected, Result.map (unsafes n) result)
+    runTest star5graph (singleStart 5UL 0UL) Graph.BFS.bfs_level [ Some 0UL; Some 1UL; Some 1UL; Some 1UL; Some 1UL ]
 
 [<Fact>]
 let ``Parent bfs 5 node star start center`` () =
-    let n = uint64 star5graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_parent star5graph start
-    let expected = [ Some 0UL; Some 0UL; Some 0UL; Some 0UL; Some 0UL ]
-    Assert.Equal(Ok expected, Result.map (unsafes n) result)
+    runTest star5graph (singleStart 5UL 0UL) Graph.BFS.bfs_parent [ Some 0UL; Some 0UL; Some 0UL; Some 0UL; Some 0UL ]
 
 [<Fact>]
 let ``Level bfs 5 node star start leaf`` () =
-    let n = uint64 star5graph.ncols
-    let start = singleStart n 1UL
-    let result = Graph.BFS.bfs_level star5graph start
-    let expected = [ Some 1UL; Some 0UL; Some 2UL; Some 2UL; Some 2UL ]
-    Assert.Equal(Ok expected, Result.map (unsafes n) result)
+    runTest star5graph (singleStart 5UL 1UL) Graph.BFS.bfs_level [ Some 1UL; Some 0UL; Some 2UL; Some 2UL; Some 2UL ]
 
 [<Fact>]
 let ``Parent bfs 5 node star start leaf`` () =
-    let n = uint64 star5graph.ncols
-    let start = singleStart n 1UL
-    let result = Graph.BFS.bfs_parent star5graph start
-    let expected = [ Some 1UL; Some 1UL; Some 0UL; Some 0UL; Some 0UL ]
-    Assert.Equal(Ok expected, Result.map (unsafes n) result)
+    runTest star5graph (singleStart 5UL 1UL) Graph.BFS.bfs_parent [ Some 1UL; Some 1UL; Some 0UL; Some 0UL; Some 0UL ]
 
 // ============== Two components ==============
 
@@ -248,19 +225,11 @@ let private twoCompGraph =
 
 [<Fact>]
 let ``Level bfs two components start 0`` () =
-    let n = uint64 twoCompGraph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_level twoCompGraph start
-    let expected = [ Some 0UL; Some 1UL; Some 1UL; None; None; None ]
-    Assert.Equal(Ok expected, Result.map (unsafes n) result)
+    runTest twoCompGraph (singleStart 6UL 0UL) Graph.BFS.bfs_level [ Some 0UL; Some 1UL; Some 1UL; None; None; None ]
 
 [<Fact>]
 let ``Parent bfs two components start 0`` () =
-    let n = uint64 twoCompGraph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_parent twoCompGraph start
-    let expected = [ Some 0UL; Some 0UL; Some 0UL; None; None; None ]
-    Assert.Equal(Ok expected, Result.map (unsafes n) result)
+    runTest twoCompGraph (singleStart 6UL 0UL) Graph.BFS.bfs_parent [ Some 0UL; Some 0UL; Some 0UL; None; None; None ]
 
 // ============== Square (4-cycle) ==============
 
@@ -282,19 +251,11 @@ let private squareGraph =
 
 [<Fact>]
 let ``Level bfs square start 0`` () =
-    let n = uint64 squareGraph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_level squareGraph start
-    let expected = [ Some 0UL; Some 1UL; Some 2UL; Some 1UL ]
-    Assert.Equal(Ok expected, Result.map (unsafes n) result)
+    runTest squareGraph (singleStart 4UL 0UL) Graph.BFS.bfs_level [ Some 0UL; Some 1UL; Some 2UL; Some 1UL ]
 
 [<Fact>]
 let ``Parent bfs square start 0`` () =
-    let n = uint64 squareGraph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_parent squareGraph start
-    let expected = [ Some 0UL; Some 0UL; Some 1UL; Some 0UL ]
-    Assert.Equal(Ok expected, Result.map (unsafes n) result)
+    runTest squareGraph (singleStart 4UL 0UL) Graph.BFS.bfs_parent [ Some 0UL; Some 0UL; Some 1UL; Some 0UL ]
 
 // ============== 6-cycle ==============
 
@@ -320,19 +281,19 @@ let private cycle6graph =
 
 [<Fact>]
 let ``Level bfs 6 cycle start 0`` () =
-    let n = uint64 cycle6graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_level cycle6graph start
-    let expected = [ Some 0UL; Some 1UL; Some 2UL; Some 3UL; Some 2UL; Some 1UL ]
-    Assert.Equal(Ok expected, Result.map (unsafes n) result)
+    runTest
+        cycle6graph
+        (singleStart 6UL 0UL)
+        Graph.BFS.bfs_level
+        [ Some 0UL; Some 1UL; Some 2UL; Some 3UL; Some 2UL; Some 1UL ]
 
 [<Fact>]
 let ``Parent bfs 6 cycle start 0`` () =
-    let n = uint64 cycle6graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_parent cycle6graph start
-    let expected = [ Some 0UL; Some 0UL; Some 1UL; Some 2UL; Some 5UL; Some 0UL ]
-    Assert.Equal(Ok expected, Result.map (unsafes n) result)
+    runTest
+        cycle6graph
+        (singleStart 6UL 0UL)
+        Graph.BFS.bfs_parent
+        [ Some 0UL; Some 0UL; Some 1UL; Some 2UL; Some 5UL; Some 0UL ]
 
 // ============== 2 nodes ==============
 
@@ -347,31 +308,19 @@ let private graph2 =
 
 [<Fact>]
 let ``Level bfs 2 nodes start 0`` () =
-    let n = uint64 graph2.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_level graph2 start
-    Assert.Equal(Ok [ Some 0UL; Some 1UL ], Result.map (unsafes n) result)
+    runTest graph2 (singleStart 2UL 0UL) Graph.BFS.bfs_level [ Some 0UL; Some 1UL ]
 
 [<Fact>]
 let ``Parent bfs 2 nodes start 0`` () =
-    let n = uint64 graph2.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_parent graph2 start
-    Assert.Equal(Ok [ Some 0UL; Some 0UL ], Result.map (unsafes n) result)
+    runTest graph2 (singleStart 2UL 0UL) Graph.BFS.bfs_parent [ Some 0UL; Some 0UL ]
 
 [<Fact>]
 let ``Level bfs 2 nodes start 1`` () =
-    let n = uint64 graph2.ncols
-    let start = singleStart n 1UL
-    let result = Graph.BFS.bfs_level graph2 start
-    Assert.Equal(Ok [ Some 1UL; Some 0UL ], Result.map (unsafes n) result)
+    runTest graph2 (singleStart 2UL 1UL) Graph.BFS.bfs_level [ Some 1UL; Some 0UL ]
 
 [<Fact>]
 let ``Parent bfs 2 nodes start 1`` () =
-    let n = uint64 graph2.ncols
-    let start = singleStart n 1UL
-    let result = Graph.BFS.bfs_parent graph2 start
-    Assert.Equal(Ok [ Some 1UL; Some 1UL ], Result.map (unsafes n) result)
+    runTest graph2 (singleStart 2UL 1UL) Graph.BFS.bfs_parent [ Some 1UL; Some 1UL ]
 
 // ============== 4-node line ==============
 
@@ -391,31 +340,19 @@ let private line4graph =
 
 [<Fact>]
 let ``Level bfs 4 node line start 0`` () =
-    let n = uint64 line4graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_level line4graph start
-    Assert.Equal(Ok [ Some 0UL; Some 1UL; Some 2UL; Some 3UL ], Result.map (unsafes n) result)
+    runTest line4graph (singleStart 4UL 0UL) Graph.BFS.bfs_level [ Some 0UL; Some 1UL; Some 2UL; Some 3UL ]
 
 [<Fact>]
 let ``Parent bfs 4 node line start 0`` () =
-    let n = uint64 line4graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_parent line4graph start
-    Assert.Equal(Ok [ Some 0UL; Some 0UL; Some 1UL; Some 2UL ], Result.map (unsafes n) result)
+    runTest line4graph (singleStart 4UL 0UL) Graph.BFS.bfs_parent [ Some 0UL; Some 0UL; Some 1UL; Some 2UL ]
 
 [<Fact>]
 let ``Level bfs 4 node line start 3`` () =
-    let n = uint64 line4graph.ncols
-    let start = singleStart n 3UL
-    let result = Graph.BFS.bfs_level line4graph start
-    Assert.Equal(Ok [ Some 3UL; Some 2UL; Some 1UL; Some 0UL ], Result.map (unsafes n) result)
+    runTest line4graph (singleStart 4UL 3UL) Graph.BFS.bfs_level [ Some 3UL; Some 2UL; Some 1UL; Some 0UL ]
 
 [<Fact>]
 let ``Parent bfs 4 node line start 3`` () =
-    let n = uint64 line4graph.ncols
-    let start = singleStart n 3UL
-    let result = Graph.BFS.bfs_parent line4graph start
-    Assert.Equal(Ok [ Some 1UL; Some 2UL; Some 3UL; Some 3UL ], Result.map (unsafes n) result)
+    runTest line4graph (singleStart 4UL 3UL) Graph.BFS.bfs_parent [ Some 1UL; Some 2UL; Some 3UL; Some 3UL ]
 
 // ============== 5-node line ==============
 
@@ -437,45 +374,27 @@ let private line5graph =
 
 [<Fact>]
 let ``Level bfs 5 node line start 0`` () =
-    let n = uint64 line5graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_level line5graph start
-    Assert.Equal(Ok [ Some 0UL; Some 1UL; Some 2UL; Some 3UL; Some 4UL ], Result.map (unsafes n) result)
+    runTest line5graph (singleStart 5UL 0UL) Graph.BFS.bfs_level [ Some 0UL; Some 1UL; Some 2UL; Some 3UL; Some 4UL ]
 
 [<Fact>]
 let ``Parent bfs 5 node line start 0`` () =
-    let n = uint64 line5graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_parent line5graph start
-    Assert.Equal(Ok [ Some 0UL; Some 0UL; Some 1UL; Some 2UL; Some 3UL ], Result.map (unsafes n) result)
+    runTest line5graph (singleStart 5UL 0UL) Graph.BFS.bfs_parent [ Some 0UL; Some 0UL; Some 1UL; Some 2UL; Some 3UL ]
 
 [<Fact>]
 let ``Level bfs 5 node line start 4`` () =
-    let n = uint64 line5graph.ncols
-    let start = singleStart n 4UL
-    let result = Graph.BFS.bfs_level line5graph start
-    Assert.Equal(Ok [ Some 4UL; Some 3UL; Some 2UL; Some 1UL; Some 0UL ], Result.map (unsafes n) result)
+    runTest line5graph (singleStart 5UL 4UL) Graph.BFS.bfs_level [ Some 4UL; Some 3UL; Some 2UL; Some 1UL; Some 0UL ]
 
 [<Fact>]
 let ``Parent bfs 5 node line start 4`` () =
-    let n = uint64 line5graph.ncols
-    let start = singleStart n 4UL
-    let result = Graph.BFS.bfs_parent line5graph start
-    Assert.Equal(Ok [ Some 1UL; Some 2UL; Some 3UL; Some 4UL; Some 4UL ], Result.map (unsafes n) result)
+    runTest line5graph (singleStart 5UL 4UL) Graph.BFS.bfs_parent [ Some 1UL; Some 2UL; Some 3UL; Some 4UL; Some 4UL ]
 
 [<Fact>]
 let ``Level bfs 5 node line start 2`` () =
-    let n = uint64 line5graph.ncols
-    let start = singleStart n 2UL
-    let result = Graph.BFS.bfs_level line5graph start
-    Assert.Equal(Ok [ Some 2UL; Some 1UL; Some 0UL; Some 1UL; Some 2UL ], Result.map (unsafes n) result)
+    runTest line5graph (singleStart 5UL 2UL) Graph.BFS.bfs_level [ Some 2UL; Some 1UL; Some 0UL; Some 1UL; Some 2UL ]
 
 [<Fact>]
 let ``Parent bfs 5 node line start 2`` () =
-    let n = uint64 line5graph.ncols
-    let start = singleStart n 2UL
-    let result = Graph.BFS.bfs_parent line5graph start
-    Assert.Equal(Ok [ Some 1UL; Some 2UL; Some 2UL; Some 2UL; Some 3UL ], Result.map (unsafes n) result)
+    runTest line5graph (singleStart 5UL 2UL) Graph.BFS.bfs_parent [ Some 1UL; Some 2UL; Some 2UL; Some 2UL; Some 3UL ]
 
 // ============== Simple triangle ==============
 
@@ -495,31 +414,19 @@ let private triangleGraph =
 
 [<Fact>]
 let ``Level bfs triangle start 0`` () =
-    let n = uint64 triangleGraph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_level triangleGraph start
-    Assert.Equal(Ok [ Some 0UL; Some 1UL; Some 1UL ], Result.map (unsafes n) result)
+    runTest triangleGraph (singleStart 3UL 0UL) Graph.BFS.bfs_level [ Some 0UL; Some 1UL; Some 1UL ]
 
 [<Fact>]
 let ``Parent bfs triangle start 0`` () =
-    let n = uint64 triangleGraph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_parent triangleGraph start
-    Assert.Equal(Ok [ Some 0UL; Some 0UL; Some 0UL ], Result.map (unsafes n) result)
+    runTest triangleGraph (singleStart 3UL 0UL) Graph.BFS.bfs_parent [ Some 0UL; Some 0UL; Some 0UL ]
 
 [<Fact>]
 let ``Level bfs triangle start 2`` () =
-    let n = uint64 triangleGraph.ncols
-    let start = singleStart n 2UL
-    let result = Graph.BFS.bfs_level triangleGraph start
-    Assert.Equal(Ok [ Some 1UL; Some 1UL; Some 0UL ], Result.map (unsafes n) result)
+    runTest triangleGraph (singleStart 3UL 2UL) Graph.BFS.bfs_level [ Some 1UL; Some 1UL; Some 0UL ]
 
 [<Fact>]
 let ``Parent bfs triangle start 2`` () =
-    let n = uint64 triangleGraph.ncols
-    let start = singleStart n 2UL
-    let result = Graph.BFS.bfs_parent triangleGraph start
-    Assert.Equal(Ok [ Some 2UL; Some 2UL; Some 2UL ], Result.map (unsafes n) result)
+    runTest triangleGraph (singleStart 3UL 2UL) Graph.BFS.bfs_parent [ Some 2UL; Some 2UL; Some 2UL ]
 
 // ============== 5-node complete graph ==============
 
@@ -553,45 +460,51 @@ let private complete5graph =
 
 [<Fact>]
 let ``Level bfs 5 node complete start 0`` () =
-    let n = uint64 complete5graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_level complete5graph start
-    Assert.Equal(Ok [ Some 0UL; Some 1UL; Some 1UL; Some 1UL; Some 1UL ], Result.map (unsafes n) result)
+    runTest
+        complete5graph
+        (singleStart 5UL 0UL)
+        Graph.BFS.bfs_level
+        [ Some 0UL; Some 1UL; Some 1UL; Some 1UL; Some 1UL ]
 
 [<Fact>]
 let ``Parent bfs 5 node complete start 0`` () =
-    let n = uint64 complete5graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_parent complete5graph start
-    Assert.Equal(Ok [ Some 0UL; Some 0UL; Some 0UL; Some 0UL; Some 0UL ], Result.map (unsafes n) result)
+    runTest
+        complete5graph
+        (singleStart 5UL 0UL)
+        Graph.BFS.bfs_parent
+        [ Some 0UL; Some 0UL; Some 0UL; Some 0UL; Some 0UL ]
 
 [<Fact>]
 let ``Level bfs 5 node complete start 4`` () =
-    let n = uint64 complete5graph.ncols
-    let start = singleStart n 4UL
-    let result = Graph.BFS.bfs_level complete5graph start
-    Assert.Equal(Ok [ Some 1UL; Some 1UL; Some 1UL; Some 1UL; Some 0UL ], Result.map (unsafes n) result)
+    runTest
+        complete5graph
+        (singleStart 5UL 4UL)
+        Graph.BFS.bfs_level
+        [ Some 1UL; Some 1UL; Some 1UL; Some 1UL; Some 0UL ]
 
 [<Fact>]
 let ``Parent bfs 5 node complete start 4`` () =
-    let n = uint64 complete5graph.ncols
-    let start = singleStart n 4UL
-    let result = Graph.BFS.bfs_parent complete5graph start
-    Assert.Equal(Ok [ Some 4UL; Some 4UL; Some 4UL; Some 4UL; Some 4UL ], Result.map (unsafes n) result)
+    runTest
+        complete5graph
+        (singleStart 5UL 4UL)
+        Graph.BFS.bfs_parent
+        [ Some 4UL; Some 4UL; Some 4UL; Some 4UL; Some 4UL ]
 
 [<Fact>]
 let ``Level bfs 5 node complete start 2`` () =
-    let n = uint64 complete5graph.ncols
-    let start = singleStart n 2UL
-    let result = Graph.BFS.bfs_level complete5graph start
-    Assert.Equal(Ok [ Some 1UL; Some 1UL; Some 0UL; Some 1UL; Some 1UL ], Result.map (unsafes n) result)
+    runTest
+        complete5graph
+        (singleStart 5UL 2UL)
+        Graph.BFS.bfs_level
+        [ Some 1UL; Some 1UL; Some 0UL; Some 1UL; Some 1UL ]
 
 [<Fact>]
 let ``Parent bfs 5 node complete start 2`` () =
-    let n = uint64 complete5graph.ncols
-    let start = singleStart n 2UL
-    let result = Graph.BFS.bfs_parent complete5graph start
-    Assert.Equal(Ok [ Some 2UL; Some 2UL; Some 2UL; Some 2UL; Some 2UL ], Result.map (unsafes n) result)
+    runTest
+        complete5graph
+        (singleStart 5UL 2UL)
+        Graph.BFS.bfs_parent
+        [ Some 2UL; Some 2UL; Some 2UL; Some 2UL; Some 2UL ]
 
 // ============== K3,3 bipartite ==============
 
@@ -623,45 +536,51 @@ let private k33graph =
 
 [<Fact>]
 let ``Level bfs K3 3 start 0`` () =
-    let n = uint64 k33graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_level k33graph start
-    Assert.Equal(Ok [ Some 0UL; Some 2UL; Some 2UL; Some 1UL; Some 1UL; Some 1UL ], Result.map (unsafes n) result)
+    runTest
+        k33graph
+        (singleStart 6UL 0UL)
+        Graph.BFS.bfs_level
+        [ Some 0UL; Some 2UL; Some 2UL; Some 1UL; Some 1UL; Some 1UL ]
 
 [<Fact>]
 let ``Parent bfs K3 3 start 0`` () =
-    let n = uint64 k33graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_parent k33graph start
-    Assert.Equal(Ok [ Some 0UL; Some 3UL; Some 3UL; Some 0UL; Some 0UL; Some 0UL ], Result.map (unsafes n) result)
+    runTest
+        k33graph
+        (singleStart 6UL 0UL)
+        Graph.BFS.bfs_parent
+        [ Some 0UL; Some 3UL; Some 3UL; Some 0UL; Some 0UL; Some 0UL ]
 
 [<Fact>]
 let ``Level bfs K3 3 start 5`` () =
-    let n = uint64 k33graph.ncols
-    let start = singleStart n 5UL
-    let result = Graph.BFS.bfs_level k33graph start
-    Assert.Equal(Ok [ Some 1UL; Some 1UL; Some 1UL; Some 2UL; Some 2UL; Some 0UL ], Result.map (unsafes n) result)
+    runTest
+        k33graph
+        (singleStart 6UL 5UL)
+        Graph.BFS.bfs_level
+        [ Some 1UL; Some 1UL; Some 1UL; Some 2UL; Some 2UL; Some 0UL ]
 
 [<Fact>]
 let ``Parent bfs K3 3 start 5`` () =
-    let n = uint64 k33graph.ncols
-    let start = singleStart n 5UL
-    let result = Graph.BFS.bfs_parent k33graph start
-    Assert.Equal(Ok [ Some 5UL; Some 5UL; Some 5UL; Some 0UL; Some 0UL; Some 5UL ], Result.map (unsafes n) result)
+    runTest
+        k33graph
+        (singleStart 6UL 5UL)
+        Graph.BFS.bfs_parent
+        [ Some 5UL; Some 5UL; Some 5UL; Some 0UL; Some 0UL; Some 5UL ]
 
 [<Fact>]
 let ``Level bfs K3 3 start 3`` () =
-    let n = uint64 k33graph.ncols
-    let start = singleStart n 3UL
-    let result = Graph.BFS.bfs_level k33graph start
-    Assert.Equal(Ok [ Some 1UL; Some 1UL; Some 1UL; Some 0UL; Some 2UL; Some 2UL ], Result.map (unsafes n) result)
+    runTest
+        k33graph
+        (singleStart 6UL 3UL)
+        Graph.BFS.bfs_level
+        [ Some 1UL; Some 1UL; Some 1UL; Some 0UL; Some 2UL; Some 2UL ]
 
 [<Fact>]
 let ``Parent bfs K3 3 start 3`` () =
-    let n = uint64 k33graph.ncols
-    let start = singleStart n 3UL
-    let result = Graph.BFS.bfs_parent k33graph start
-    Assert.Equal(Ok [ Some 3UL; Some 3UL; Some 3UL; Some 3UL; Some 0UL; Some 0UL ], Result.map (unsafes n) result)
+    runTest
+        k33graph
+        (singleStart 6UL 3UL)
+        Graph.BFS.bfs_parent
+        [ Some 3UL; Some 3UL; Some 3UL; Some 3UL; Some 0UL; Some 0UL ]
 
 // ============== 8 nodes random weights ==============
 
@@ -701,117 +620,93 @@ let private random8graph =
 
 [<Fact>]
 let ``Level bfs 8 node random start 0`` () =
-    let n = uint64 random8graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_level random8graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 0UL
-              Some 1UL
-              Some 1UL
-              Some 1UL
-              Some 2UL
-              Some 3UL
-              Some 3UL
-              Some 3UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        random8graph
+        (singleStart 8UL 0UL)
+        Graph.BFS.bfs_level
+        [ Some 0UL
+          Some 1UL
+          Some 1UL
+          Some 1UL
+          Some 2UL
+          Some 3UL
+          Some 3UL
+          Some 3UL ]
 
 [<Fact>]
 let ``Parent bfs 8 node random start 0`` () =
-    let n = uint64 random8graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_parent random8graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 0UL
-              Some 0UL
-              Some 0UL
-              Some 0UL
-              Some 3UL
-              Some 4UL
-              Some 4UL
-              Some 4UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        random8graph
+        (singleStart 8UL 0UL)
+        Graph.BFS.bfs_parent
+        [ Some 0UL
+          Some 0UL
+          Some 0UL
+          Some 0UL
+          Some 3UL
+          Some 4UL
+          Some 4UL
+          Some 4UL ]
 
 [<Fact>]
 let ``Level bfs 8 node random start 7`` () =
-    let n = uint64 random8graph.ncols
-    let start = singleStart n 7UL
-    let result = Graph.BFS.bfs_level random8graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 3UL
-              Some 3UL
-              Some 3UL
-              Some 2UL
-              Some 1UL
-              Some 1UL
-              Some 1UL
-              Some 0UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        random8graph
+        (singleStart 8UL 7UL)
+        Graph.BFS.bfs_level
+        [ Some 3UL
+          Some 3UL
+          Some 3UL
+          Some 2UL
+          Some 1UL
+          Some 1UL
+          Some 1UL
+          Some 0UL ]
 
 [<Fact>]
 let ``Parent bfs 8 node random start 7`` () =
-    let n = uint64 random8graph.ncols
-    let start = singleStart n 7UL
-    let result = Graph.BFS.bfs_parent random8graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 3UL
-              Some 3UL
-              Some 3UL
-              Some 4UL
-              Some 7UL
-              Some 7UL
-              Some 7UL
-              Some 7UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        random8graph
+        (singleStart 8UL 7UL)
+        Graph.BFS.bfs_parent
+        [ Some 3UL
+          Some 3UL
+          Some 3UL
+          Some 4UL
+          Some 7UL
+          Some 7UL
+          Some 7UL
+          Some 7UL ]
 
 [<Fact>]
 let ``Level bfs 8 node random start 4`` () =
-    let n = uint64 random8graph.ncols
-    let start = singleStart n 4UL
-    let result = Graph.BFS.bfs_level random8graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 2UL
-              Some 2UL
-              Some 2UL
-              Some 1UL
-              Some 0UL
-              Some 1UL
-              Some 1UL
-              Some 1UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        random8graph
+        (singleStart 8UL 4UL)
+        Graph.BFS.bfs_level
+        [ Some 2UL
+          Some 2UL
+          Some 2UL
+          Some 1UL
+          Some 0UL
+          Some 1UL
+          Some 1UL
+          Some 1UL ]
 
 [<Fact>]
 let ``Parent bfs 8 node random start 4`` () =
-    let n = uint64 random8graph.ncols
-    let start = singleStart n 4UL
-    let result = Graph.BFS.bfs_parent random8graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 3UL
-              Some 3UL
-              Some 3UL
-              Some 4UL
-              Some 4UL
-              Some 4UL
-              Some 4UL
-              Some 4UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        random8graph
+        (singleStart 8UL 4UL)
+        Graph.BFS.bfs_parent
+        [ Some 3UL
+          Some 3UL
+          Some 3UL
+          Some 4UL
+          Some 4UL
+          Some 4UL
+          Some 4UL
+          Some 4UL ]
 
 // ============== 8 nodes grid ==============
 
@@ -845,117 +740,93 @@ let private grid8graph =
 
 [<Fact>]
 let ``Level bfs 8 node grid start 0`` () =
-    let n = uint64 grid8graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_level grid8graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 0UL
-              Some 1UL
-              Some 2UL
-              Some 3UL
-              Some 1UL
-              Some 2UL
-              Some 3UL
-              Some 4UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        grid8graph
+        (singleStart 8UL 0UL)
+        Graph.BFS.bfs_level
+        [ Some 0UL
+          Some 1UL
+          Some 2UL
+          Some 3UL
+          Some 1UL
+          Some 2UL
+          Some 3UL
+          Some 4UL ]
 
 [<Fact>]
 let ``Parent bfs 8 node grid start 0`` () =
-    let n = uint64 grid8graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_parent grid8graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 0UL
-              Some 0UL
-              Some 1UL
-              Some 2UL
-              Some 0UL
-              Some 1UL
-              Some 2UL
-              Some 3UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        grid8graph
+        (singleStart 8UL 0UL)
+        Graph.BFS.bfs_parent
+        [ Some 0UL
+          Some 0UL
+          Some 1UL
+          Some 2UL
+          Some 0UL
+          Some 1UL
+          Some 2UL
+          Some 3UL ]
 
 [<Fact>]
 let ``Level bfs 8 node grid start 7`` () =
-    let n = uint64 grid8graph.ncols
-    let start = singleStart n 7UL
-    let result = Graph.BFS.bfs_level grid8graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 4UL
-              Some 3UL
-              Some 2UL
-              Some 1UL
-              Some 3UL
-              Some 2UL
-              Some 1UL
-              Some 0UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        grid8graph
+        (singleStart 8UL 7UL)
+        Graph.BFS.bfs_level
+        [ Some 4UL
+          Some 3UL
+          Some 2UL
+          Some 1UL
+          Some 3UL
+          Some 2UL
+          Some 1UL
+          Some 0UL ]
 
 [<Fact>]
 let ``Parent bfs 8 node grid start 7`` () =
-    let n = uint64 grid8graph.ncols
-    let start = singleStart n 7UL
-    let result = Graph.BFS.bfs_parent grid8graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 1UL
-              Some 2UL
-              Some 3UL
-              Some 7UL
-              Some 5UL
-              Some 6UL
-              Some 7UL
-              Some 7UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        grid8graph
+        (singleStart 8UL 7UL)
+        Graph.BFS.bfs_parent
+        [ Some 1UL
+          Some 2UL
+          Some 3UL
+          Some 7UL
+          Some 5UL
+          Some 6UL
+          Some 7UL
+          Some 7UL ]
 
 [<Fact>]
 let ``Level bfs 8 node grid start 4`` () =
-    let n = uint64 grid8graph.ncols
-    let start = singleStart n 4UL
-    let result = Graph.BFS.bfs_level grid8graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 1UL
-              Some 2UL
-              Some 3UL
-              Some 4UL
-              Some 0UL
-              Some 1UL
-              Some 2UL
-              Some 3UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        grid8graph
+        (singleStart 8UL 4UL)
+        Graph.BFS.bfs_level
+        [ Some 1UL
+          Some 2UL
+          Some 3UL
+          Some 4UL
+          Some 0UL
+          Some 1UL
+          Some 2UL
+          Some 3UL ]
 
 [<Fact>]
 let ``Parent bfs 8 node grid start 4`` () =
-    let n = uint64 grid8graph.ncols
-    let start = singleStart n 4UL
-    let result = Graph.BFS.bfs_parent grid8graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 4UL
-              Some 0UL
-              Some 1UL
-              Some 2UL
-              Some 4UL
-              Some 4UL
-              Some 5UL
-              Some 6UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        grid8graph
+        (singleStart 8UL 4UL)
+        Graph.BFS.bfs_parent
+        [ Some 4UL
+          Some 0UL
+          Some 1UL
+          Some 2UL
+          Some 4UL
+          Some 4UL
+          Some 5UL
+          Some 6UL ]
 
 // ============== 10 nodes random ==============
 
@@ -995,129 +866,105 @@ let private random10graph =
 
 [<Fact>]
 let ``Level bfs 10 node random start 0`` () =
-    let n = uint64 random10graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_level random10graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 0UL
-              Some 1UL
-              Some 2UL
-              Some 3UL
-              Some 4UL
-              Some 1UL
-              Some 2UL
-              Some 3UL
-              Some 4UL
-              Some 5UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        random10graph
+        (singleStart 10UL 0UL)
+        Graph.BFS.bfs_level
+        [ Some 0UL
+          Some 1UL
+          Some 2UL
+          Some 3UL
+          Some 4UL
+          Some 1UL
+          Some 2UL
+          Some 3UL
+          Some 4UL
+          Some 5UL ]
 
 [<Fact>]
 let ``Parent bfs 10 node random start 0`` () =
-    let n = uint64 random10graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_parent random10graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 0UL
-              Some 0UL
-              Some 1UL
-              Some 2UL
-              Some 3UL
-              Some 0UL
-              Some 1UL
-              Some 2UL
-              Some 3UL
-              Some 4UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        random10graph
+        (singleStart 10UL 0UL)
+        Graph.BFS.bfs_parent
+        [ Some 0UL
+          Some 0UL
+          Some 1UL
+          Some 2UL
+          Some 3UL
+          Some 0UL
+          Some 1UL
+          Some 2UL
+          Some 3UL
+          Some 4UL ]
 
 [<Fact>]
 let ``Level bfs 10 node random start 9`` () =
-    let n = uint64 random10graph.ncols
-    let start = singleStart n 9UL
-    let result = Graph.BFS.bfs_level random10graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 5UL
-              Some 4UL
-              Some 3UL
-              Some 2UL
-              Some 1UL
-              Some 4UL
-              Some 3UL
-              Some 2UL
-              Some 1UL
-              Some 0UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        random10graph
+        (singleStart 10UL 9UL)
+        Graph.BFS.bfs_level
+        [ Some 5UL
+          Some 4UL
+          Some 3UL
+          Some 2UL
+          Some 1UL
+          Some 4UL
+          Some 3UL
+          Some 2UL
+          Some 1UL
+          Some 0UL ]
 
 [<Fact>]
 let ``Parent bfs 10 node random start 9`` () =
-    let n = uint64 random10graph.ncols
-    let start = singleStart n 9UL
-    let result = Graph.BFS.bfs_parent random10graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 1UL
-              Some 2UL
-              Some 3UL
-              Some 4UL
-              Some 9UL
-              Some 6UL
-              Some 7UL
-              Some 8UL
-              Some 9UL
-              Some 9UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        random10graph
+        (singleStart 10UL 9UL)
+        Graph.BFS.bfs_parent
+        [ Some 1UL
+          Some 2UL
+          Some 3UL
+          Some 4UL
+          Some 9UL
+          Some 6UL
+          Some 7UL
+          Some 8UL
+          Some 9UL
+          Some 9UL ]
 
 [<Fact>]
 let ``Level bfs 10 node random start 5`` () =
-    let n = uint64 random10graph.ncols
-    let start = singleStart n 5UL
-    let result = Graph.BFS.bfs_level random10graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 1UL
-              Some 2UL
-              Some 3UL
-              Some 4UL
-              Some 5UL
-              Some 0UL
-              Some 1UL
-              Some 2UL
-              Some 3UL
-              Some 4UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        random10graph
+        (singleStart 10UL 5UL)
+        Graph.BFS.bfs_level
+        [ Some 1UL
+          Some 2UL
+          Some 3UL
+          Some 4UL
+          Some 5UL
+          Some 0UL
+          Some 1UL
+          Some 2UL
+          Some 3UL
+          Some 4UL ]
 
 [<Fact>]
 let ``Parent bfs 10 node random start 5`` () =
-    let n = uint64 random10graph.ncols
-    let start = singleStart n 5UL
-    let result = Graph.BFS.bfs_parent random10graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 5UL
-              Some 0UL
-              Some 1UL
-              Some 2UL
-              Some 3UL
-              Some 5UL
-              Some 5UL
-              Some 6UL
-              Some 7UL
-              Some 8UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        random10graph
+        (singleStart 10UL 5UL)
+        Graph.BFS.bfs_parent
+        [ Some 5UL
+          Some 0UL
+          Some 1UL
+          Some 2UL
+          Some 3UL
+          Some 5UL
+          Some 5UL
+          Some 6UL
+          Some 7UL
+          Some 8UL ]
 
 // ============== 12 nodes big ==============
 
@@ -1167,141 +1014,117 @@ let private big12graph =
 
 [<Fact>]
 let ``Level bfs 12 node big start 0`` () =
-    let n = uint64 big12graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_level big12graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 0UL
-              Some 1UL
-              Some 2UL
-              Some 3UL
-              Some 2UL
-              Some 3UL
-              Some 4UL
-              Some 4UL
-              Some 3UL
-              Some 3UL
-              Some 2UL
-              Some 1UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        big12graph
+        (singleStart 12UL 0UL)
+        Graph.BFS.bfs_level
+        [ Some 0UL
+          Some 1UL
+          Some 2UL
+          Some 3UL
+          Some 2UL
+          Some 3UL
+          Some 4UL
+          Some 4UL
+          Some 3UL
+          Some 3UL
+          Some 2UL
+          Some 1UL ]
 
 [<Fact>]
 let ``Parent bfs 12 node big start 0`` () =
-    let n = uint64 big12graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_parent big12graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 0UL
-              Some 0UL
-              Some 1UL
-              Some 2UL
-              Some 11UL
-              Some 4UL
-              Some 5UL
-              Some 5UL
-              Some 10UL
-              Some 10UL
-              Some 11UL
-              Some 0UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        big12graph
+        (singleStart 12UL 0UL)
+        Graph.BFS.bfs_parent
+        [ Some 0UL
+          Some 0UL
+          Some 1UL
+          Some 2UL
+          Some 11UL
+          Some 4UL
+          Some 5UL
+          Some 5UL
+          Some 10UL
+          Some 10UL
+          Some 11UL
+          Some 0UL ]
 
 [<Fact>]
 let ``Level bfs 12 node big start 11`` () =
-    let n = uint64 big12graph.ncols
-    let start = singleStart n 11UL
-    let result = Graph.BFS.bfs_level big12graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 1UL
-              Some 1UL
-              Some 2UL
-              Some 2UL
-              Some 1UL
-              Some 2UL
-              Some 3UL
-              Some 3UL
-              Some 2UL
-              Some 2UL
-              Some 1UL
-              Some 0UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        big12graph
+        (singleStart 12UL 11UL)
+        Graph.BFS.bfs_level
+        [ Some 1UL
+          Some 1UL
+          Some 2UL
+          Some 2UL
+          Some 1UL
+          Some 2UL
+          Some 3UL
+          Some 3UL
+          Some 2UL
+          Some 2UL
+          Some 1UL
+          Some 0UL ]
 
 [<Fact>]
 let ``Parent bfs 12 node big start 11`` () =
-    let n = uint64 big12graph.ncols
-    let start = singleStart n 11UL
-    let result = Graph.BFS.bfs_parent big12graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 11UL
-              Some 11UL
-              Some 1UL
-              Some 4UL
-              Some 11UL
-              Some 4UL
-              Some 5UL
-              Some 5UL
-              Some 10UL
-              Some 10UL
-              Some 11UL
-              Some 11UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        big12graph
+        (singleStart 12UL 11UL)
+        Graph.BFS.bfs_parent
+        [ Some 11UL
+          Some 11UL
+          Some 1UL
+          Some 4UL
+          Some 11UL
+          Some 4UL
+          Some 5UL
+          Some 5UL
+          Some 10UL
+          Some 10UL
+          Some 11UL
+          Some 11UL ]
 
 [<Fact>]
 let ``Level bfs 12 node big start 6`` () =
-    let n = uint64 big12graph.ncols
-    let start = singleStart n 6UL
-    let result = Graph.BFS.bfs_level big12graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 4UL
-              Some 4UL
-              Some 3UL
-              Some 3UL
-              Some 2UL
-              Some 1UL
-              Some 0UL
-              Some 1UL
-              Some 2UL
-              Some 3UL
-              Some 2UL
-              Some 3UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        big12graph
+        (singleStart 12UL 6UL)
+        Graph.BFS.bfs_level
+        [ Some 4UL
+          Some 4UL
+          Some 3UL
+          Some 3UL
+          Some 2UL
+          Some 1UL
+          Some 0UL
+          Some 1UL
+          Some 2UL
+          Some 3UL
+          Some 2UL
+          Some 3UL ]
 
 [<Fact>]
 let ``Parent bfs 12 node big start 6`` () =
-    let n = uint64 big12graph.ncols
-    let start = singleStart n 6UL
-    let result = Graph.BFS.bfs_parent big12graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 11UL
-              Some 2UL
-              Some 4UL
-              Some 4UL
-              Some 5UL
-              Some 6UL
-              Some 6UL
-              Some 6UL
-              Some 7UL
-              Some 8UL
-              Some 5UL
-              Some 4UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        big12graph
+        (singleStart 12UL 6UL)
+        Graph.BFS.bfs_parent
+        [ Some 11UL
+          Some 2UL
+          Some 4UL
+          Some 4UL
+          Some 5UL
+          Some 6UL
+          Some 6UL
+          Some 6UL
+          Some 7UL
+          Some 8UL
+          Some 5UL
+          Some 4UL ]
 
 // ============== 10 nodes complex line ==============
 
@@ -1333,126 +1156,102 @@ let private complexLine10graph =
 
 [<Fact>]
 let ``Level bfs 10 node complex line start 0`` () =
-    let n = uint64 complexLine10graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_level complexLine10graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 0UL
-              Some 1UL
-              Some 2UL
-              Some 3UL
-              Some 4UL
-              Some 5UL
-              Some 6UL
-              Some 7UL
-              Some 8UL
-              Some 9UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        complexLine10graph
+        (singleStart 10UL 0UL)
+        Graph.BFS.bfs_level
+        [ Some 0UL
+          Some 1UL
+          Some 2UL
+          Some 3UL
+          Some 4UL
+          Some 5UL
+          Some 6UL
+          Some 7UL
+          Some 8UL
+          Some 9UL ]
 
 [<Fact>]
 let ``Parent bfs 10 node complex line start 0`` () =
-    let n = uint64 complexLine10graph.ncols
-    let start = singleStart n 0UL
-    let result = Graph.BFS.bfs_parent complexLine10graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 0UL
-              Some 0UL
-              Some 1UL
-              Some 2UL
-              Some 3UL
-              Some 4UL
-              Some 5UL
-              Some 6UL
-              Some 7UL
-              Some 8UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        complexLine10graph
+        (singleStart 10UL 0UL)
+        Graph.BFS.bfs_parent
+        [ Some 0UL
+          Some 0UL
+          Some 1UL
+          Some 2UL
+          Some 3UL
+          Some 4UL
+          Some 5UL
+          Some 6UL
+          Some 7UL
+          Some 8UL ]
 
 [<Fact>]
 let ``Level bfs 10 node complex line start 9`` () =
-    let n = uint64 complexLine10graph.ncols
-    let start = singleStart n 9UL
-    let result = Graph.BFS.bfs_level complexLine10graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 9UL
-              Some 8UL
-              Some 7UL
-              Some 6UL
-              Some 5UL
-              Some 4UL
-              Some 3UL
-              Some 2UL
-              Some 1UL
-              Some 0UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        complexLine10graph
+        (singleStart 10UL 9UL)
+        Graph.BFS.bfs_level
+        [ Some 9UL
+          Some 8UL
+          Some 7UL
+          Some 6UL
+          Some 5UL
+          Some 4UL
+          Some 3UL
+          Some 2UL
+          Some 1UL
+          Some 0UL ]
 
 [<Fact>]
 let ``Parent bfs 10 node complex line start 9`` () =
-    let n = uint64 complexLine10graph.ncols
-    let start = singleStart n 9UL
-    let result = Graph.BFS.bfs_parent complexLine10graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 1UL
-              Some 2UL
-              Some 3UL
-              Some 4UL
-              Some 5UL
-              Some 6UL
-              Some 7UL
-              Some 8UL
-              Some 9UL
-              Some 9UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        complexLine10graph
+        (singleStart 10UL 9UL)
+        Graph.BFS.bfs_parent
+        [ Some 1UL
+          Some 2UL
+          Some 3UL
+          Some 4UL
+          Some 5UL
+          Some 6UL
+          Some 7UL
+          Some 8UL
+          Some 9UL
+          Some 9UL ]
 
 [<Fact>]
 let ``Level bfs 10 node complex line start 5`` () =
-    let n = uint64 complexLine10graph.ncols
-    let start = singleStart n 5UL
-    let result = Graph.BFS.bfs_level complexLine10graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 5UL
-              Some 4UL
-              Some 3UL
-              Some 2UL
-              Some 1UL
-              Some 0UL
-              Some 1UL
-              Some 2UL
-              Some 3UL
-              Some 4UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        complexLine10graph
+        (singleStart 10UL 5UL)
+        Graph.BFS.bfs_level
+        [ Some 5UL
+          Some 4UL
+          Some 3UL
+          Some 2UL
+          Some 1UL
+          Some 0UL
+          Some 1UL
+          Some 2UL
+          Some 3UL
+          Some 4UL ]
 
 [<Fact>]
 let ``Parent bfs 10 node complex line start 5`` () =
-    let n = uint64 complexLine10graph.ncols
-    let start = singleStart n 5UL
-    let result = Graph.BFS.bfs_parent complexLine10graph start
-
-    Assert.Equal(
-        Ok
-            [ Some 1UL
-              Some 2UL
-              Some 3UL
-              Some 4UL
-              Some 5UL
-              Some 5UL
-              Some 5UL
-              Some 6UL
-              Some 7UL
-              Some 8UL ],
-        Result.map (unsafes n) result
-    )
+    runTest
+        complexLine10graph
+        (singleStart 10UL 5UL)
+        Graph.BFS.bfs_parent
+        [ Some 1UL
+          Some 2UL
+          Some 3UL
+          Some 4UL
+          Some 5UL
+          Some 5UL
+          Some 5UL
+          Some 6UL
+          Some 7UL
+          Some 8UL ]

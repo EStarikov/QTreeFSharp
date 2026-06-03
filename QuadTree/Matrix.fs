@@ -85,45 +85,45 @@ let fromCoordinateList (coo: CoordinateList<'a>) =
         unique
         |> List.exists (fun (i, j, _) -> uint64 i >= uint64 coo.nrows || uint64 j >= uint64 coo.ncols)
     then
-        failwith "Coordinates out of range"
+        Error "Coordinates out of range"
+    else
+        let nvals = (uint64 <| List.length unique) * 1UL<nvals>
+        let nrows = coo.nrows
+        let ncols = coo.ncols
 
-    let nvals = (uint64 <| List.length unique) * 1UL<nvals>
-    let nrows = coo.nrows
-    let ncols = coo.ncols
+        // the resulting matrix is always square
+        let storageSize = getNearestUpperPowerOfTwo (max (uint64 nrows) (uint64 ncols))
 
-    // the resulting matrix is always square
-    let storageSize = getNearestUpperPowerOfTwo (max (uint64 nrows) (uint64 ncols))
+        let isEntryInQuadrant (pr, pc) size (entry: COOEntry<'a>) =
+            let (i, j, _) = entry
 
-    let isEntryInQuadrant (pr, pc) size (entry: COOEntry<'a>) =
-        let (i, j, _) = entry
+            i >= pr
+            && j >= pc
+            && i < pr + size * 1UL<rowindex>
+            && j < pc + size * 1UL<colindex>
 
-        i >= pr
-        && j >= pc
-        && i < pr + size * 1UL<rowindex>
-        && j < pc + size * 1UL<colindex>
+        let rec traverse coordinates (pr, pc) size =
+            match coordinates with
+            | [] when (uint64 pr) + size < uint64 nrows && (uint64 pc) + size < uint64 ncols -> Leaf <| UserValue None
+            | [] when uint64 pr >= uint64 nrows || uint64 pc >= uint64 ncols -> Leaf Dummy
+            | (i, j, value) :: _ when pr = i && pc = j && size = 1UL -> Leaf << UserValue <| Some value
+            | _ ->
+                let halfSize = size / 2UL
+                let nwp, nep, swp, sep = getQuadrantCoords (pr, pc) halfSize
+                let nwCoo = coordinates |> List.filter (isEntryInQuadrant nwp halfSize)
+                let neCoo = coordinates |> List.filter (isEntryInQuadrant nep halfSize)
+                let swCoo = coordinates |> List.filter (isEntryInQuadrant swp halfSize)
+                let seCoo = coordinates |> List.filter (isEntryInQuadrant sep halfSize)
 
-    let rec traverse coordinates (pr, pc) size =
-        match coordinates with
-        | [] when (uint64 pr) + size < uint64 nrows && (uint64 pc) + size < uint64 ncols -> Leaf <| UserValue None
-        | [] when uint64 pr >= uint64 nrows || uint64 pc >= uint64 ncols -> Leaf Dummy
-        | (i, j, value) :: _ when pr = i && pc = j && size = 1UL -> Leaf << UserValue <| Some value
-        | _ ->
-            let halfSize = size / 2UL
-            let nwp, nep, swp, sep = getQuadrantCoords (pr, pc) halfSize
-            let nwCoo = coordinates |> List.filter (isEntryInQuadrant nwp halfSize)
-            let neCoo = coordinates |> List.filter (isEntryInQuadrant nep halfSize)
-            let swCoo = coordinates |> List.filter (isEntryInQuadrant swp halfSize)
-            let seCoo = coordinates |> List.filter (isEntryInQuadrant sep halfSize)
+                mkNode
+                    (traverse nwCoo nwp halfSize)
+                    (traverse neCoo nep halfSize)
+                    (traverse swCoo swp halfSize)
+                    (traverse seCoo sep halfSize)
 
-            mkNode
-                (traverse nwCoo nwp halfSize)
-                (traverse neCoo nep halfSize)
-                (traverse swCoo swp halfSize)
-                (traverse seCoo sep halfSize)
+        let tree = traverse unique (0UL<rowindex>, 0UL<colindex>) storageSize
 
-    let tree = traverse unique (0UL<rowindex>, 0UL<colindex>) storageSize
-
-    SparseMatrix(nrows, ncols, nvals, Storage(storageSize * 1UL<storageSize>, tree))
+        Ok(SparseMatrix(nrows, ncols, nvals, Storage(storageSize * 1UL<storageSize>, tree)))
 
 let toCoordinateList (matrix: SparseMatrix<'a>) =
     let nrows = matrix.nrows
@@ -152,7 +152,13 @@ let toCoordinateList (matrix: SparseMatrix<'a>) =
     CoordinateList(nrows, ncols, sorted)
 
 let empty nrows ncols =
-    fromCoordinateList (CoordinateList(nrows, ncols, []))
+    match fromCoordinateList (CoordinateList(nrows, ncols, [])) with
+    | Ok m -> m
+    | Error _ ->
+        let storageSize =
+            getNearestUpperPowerOfTwo (max (uint64 nrows) (uint64 ncols)) * 1UL<storageSize>
+
+        SparseMatrix(nrows, ncols, 0UL<nvals>, Storage(storageSize, Leaf Dummy))
 
 let map (matrix: SparseMatrix<'a>) f =
     let rec inner (size: uint64<storageSize>) (tree: qtree<Option<'a>>) =
@@ -572,26 +578,35 @@ let slice
 
         Ok(SparseMatrix(newRows, newCols, nvals, Storage(newSize, shiftedTree)))
 
+let foldQuadtree folder state size tree =
+    let rec inner rowOffset colOffset currentSize subTree acc =
+        match subTree with
+        | Leaf Dummy -> acc
+        | Leaf(UserValue None) -> acc
+        | Leaf(UserValue(Some value)) ->
+            let rec loop currRow currCol currentAcc =
+                if currRow = rowOffset + currentSize then
+                    currentAcc
+                elif currCol = colOffset + currentSize then
+                    loop (currRow + 1UL) colOffset currentAcc
+                else
+                    loop currRow (currCol + 1UL) (folder currentAcc currRow currCol value)
+
+            loop rowOffset colOffset acc
+        | Node(nw, ne, sw, se) ->
+            let half = currentSize / 2UL
+            let acc1 = inner rowOffset colOffset half nw acc
+            let acc2 = inner rowOffset (colOffset + half) half ne acc1
+            let acc3 = inner (rowOffset + half) colOffset half sw acc2
+            inner (rowOffset + half) (colOffset + half) half se acc3
+
+    inner 0UL 0UL (uint64 size) tree state
+
 let reduceRows (op: 'a option -> 'a option -> 'a option) (matrix: SparseMatrix<'a>) : Vector.SparseVector<'a> =
     let rows = matrix.nrows
 
-    let rec inner (size: uint64<storageSize>) (row: uint64<rowindex>) (col: uint64<colindex>) tree acc =
-        match tree with
-        | Node(nw, ne, sw, se) ->
-            let half = size / 2UL
-            let halfRow = (uint64 half) * 1UL<rowindex>
-            let halfCol = (uint64 half) * 1UL<colindex>
-            let acc = inner half row col nw acc
-            let acc = inner half row (col + halfCol) ne acc
-            let acc = inner half (row + halfRow) col sw acc
-            let acc = inner half (row + halfRow) (col + halfCol) se acc
-            acc
-        | Leaf(Dummy) -> acc
-        | Leaf(UserValue(None)) -> acc
-        | Leaf(UserValue(Some v)) -> (row, v) :: acc
-
     let pairs =
-        inner matrix.storage.size 0UL<rowindex> 0UL<colindex> matrix.storage.data []
+        foldQuadtree (fun acc row col v -> (row, v) :: acc) [] matrix.storage.size matrix.storage.data
 
     let grouped =
         List.sortBy fst pairs
@@ -616,28 +631,20 @@ let reduceRows (op: 'a option -> 'a option -> 'a option) (matrix: SparseMatrix<'
     let vectorData =
         data |> List.map (fun (row, _, v) -> (uint64 row * 1UL<Vector.index>, v))
 
-    Vector.fromCoordinateList (Vector.CoordinateList(uint64 rows * 1UL<Vector.dataLength>, vectorData))
+    match Vector.fromCoordinateList (Vector.CoordinateList(uint64 rows * 1UL<Vector.dataLength>, vectorData)) with
+    | Ok v -> v
+    | Error _ ->
+        Vector.SparseVector(
+            uint64 rows * 1UL<Vector.dataLength>,
+            0UL<nvals>,
+            Vector.Storage(1UL<storageSize>, Vector.Leaf Dummy)
+        )
 
 let reduceCols (op: 'a option -> 'a option -> 'a option) (matrix: SparseMatrix<'a>) : Vector.SparseVector<'a> =
     let cols = matrix.ncols
 
-    let rec inner (size: uint64<storageSize>) (row: uint64<rowindex>) (col: uint64<colindex>) tree acc =
-        match tree with
-        | Node(nw, ne, sw, se) ->
-            let half = size / 2UL
-            let halfRow = (uint64 half) * 1UL<rowindex>
-            let halfCol = (uint64 half) * 1UL<colindex>
-            let acc = inner half row col nw acc
-            let acc = inner half row (col + halfCol) ne acc
-            let acc = inner half (row + halfRow) col sw acc
-            let acc = inner half (row + halfRow) (col + halfCol) se acc
-            acc
-        | Leaf(Dummy) -> acc
-        | Leaf(UserValue(None)) -> acc
-        | Leaf(UserValue(Some v)) -> (col, v) :: acc
-
     let pairs =
-        inner matrix.storage.size 0UL<rowindex> 0UL<colindex> matrix.storage.data []
+        foldQuadtree (fun acc row col v -> (col, v) :: acc) [] matrix.storage.size matrix.storage.data
 
     let grouped =
         List.sortBy fst pairs
@@ -662,7 +669,14 @@ let reduceCols (op: 'a option -> 'a option -> 'a option) (matrix: SparseMatrix<'
     let vectorData =
         data |> List.map (fun (_, col, v) -> (uint64 col * 1UL<Vector.index>, v))
 
-    Vector.fromCoordinateList (Vector.CoordinateList(uint64 cols * 1UL<Vector.dataLength>, vectorData))
+    match Vector.fromCoordinateList (Vector.CoordinateList(uint64 cols * 1UL<Vector.dataLength>, vectorData)) with
+    | Ok v -> v
+    | Error _ ->
+        Vector.SparseVector(
+            uint64 cols * 1UL<Vector.dataLength>,
+            0UL<nvals>,
+            Vector.Storage(1UL<storageSize>, Vector.Leaf Dummy)
+        )
 
 let kroneckerProduct
     (matrix1: SparseMatrix<'a>)
@@ -708,30 +722,6 @@ let kroneckerProduct
                 | false, true -> Node(emptySub, emptySub, insert half (row - halfRow) col value emptySub, emptySub)
                 | false, false ->
                     Node(emptySub, emptySub, emptySub, insert half (row - halfRow) (col - halfCol) value emptySub)
-
-    let foldQuadtree folder state size tree =
-        let rec inner rowOffset colOffset currentSize subTree acc =
-            match subTree with
-            | Leaf Dummy -> acc
-            | Leaf(UserValue None) -> acc
-            | Leaf(UserValue(Some value)) ->
-                let rec loop currRow currCol currentAcc =
-                    if currRow = rowOffset + currentSize then
-                        currentAcc
-                    elif currCol = colOffset + currentSize then
-                        loop (currRow + 1UL) colOffset currentAcc
-                    else
-                        loop currRow (currCol + 1UL) (folder currentAcc currRow currCol value)
-
-                loop rowOffset colOffset acc
-            | Node(nw, ne, sw, se) ->
-                let half = currentSize / 2UL
-                let acc1 = inner rowOffset colOffset half nw acc
-                let acc2 = inner rowOffset (colOffset + half) half ne acc1
-                let acc3 = inner (rowOffset + half) colOffset half sw acc2
-                inner (rowOffset + half) (colOffset + half) half se acc3
-
-        inner 0UL 0UL (uint64 size) tree state
 
     let mat2Rows = uint64 matrix2.nrows
     let mat2Cols = uint64 matrix2.ncols

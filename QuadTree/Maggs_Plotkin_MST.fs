@@ -12,17 +12,6 @@ type Error =
 
 let mst (graph: Matrix.SparseMatrix<'a>) =
 
-    let diag =
-        let zero = Unchecked.defaultof<'a>
-
-        Matrix.fromCoordinateList (
-            Matrix.CoordinateList(
-                graph.nrows,
-                graph.ncols,
-                [ for i in 0UL .. uint64 graph.nrows - 1UL -> (i * 1UL<rowindex>, i * 1UL<colindex>, zero) ]
-            )
-        )
-
     let _max x y =
         match (x, y) with
         | Some x, Some y -> max x y |> Some
@@ -36,12 +25,26 @@ let mst (graph: Matrix.SparseMatrix<'a>) =
         | _ -> None
 
     resultM {
+        let! diag =
+            let zero = Unchecked.defaultof<'a>
+
+            Matrix.fromCoordinateList (
+                Matrix.CoordinateList(
+                    graph.nrows,
+                    graph.ncols,
+                    [ for i in 0UL .. uint64 graph.nrows - 1UL -> (i * 1UL<rowindex>, i * 1UL<colindex>, zero) ]
+                )
+            )
+
         let! graph =
-            Matrix.map2 graph diag (fun x y ->
-                match y with
-                | None -> x
-                | _ -> y)
-            |> Result.mapError DiagAdditionProblem
+            match
+                Matrix.map2 graph diag (fun x y ->
+                    match y with
+                    | None -> x
+                    | _ -> y)
+            with
+            | Ok g -> Ok g
+            | Error e -> Error(sprintf "DiagAdditionProblem: %A" e)
 
         let graph =
             Matrix.mapi graph (fun i j v ->
@@ -61,19 +64,24 @@ let mst (graph: Matrix.SparseMatrix<'a>) =
                         return! compute step
                 }
 
-            compute graph |> Result.mapError ClosureComputationProblem
+            match compute graph with
+            | Ok c -> Ok c
+            | Error e -> Error(sprintf "ClosureComputationProblem: %A" e)
 
         let! mst =
-            Matrix.map2i graph closure (fun i j x y ->
-                if uint64 i = uint64 j then
-                    None
-                elif x = y then
-                    match x with
-                    | Some(w, _, _) -> Some(w)
-                    | _ -> None
-                else
-                    None)
-            |> Result.mapError MSTComputationProblem
+            match
+                Matrix.map2i graph closure (fun i j x y ->
+                    if uint64 i = uint64 j then
+                        None
+                    elif x = y then
+                        match x with
+                        | Some(w, _, _) -> Some(w)
+                        | _ -> None
+                    else
+                        None)
+            with
+            | Ok m -> Ok m
+            | Error e -> Error(sprintf "MSTComputationProblem: %A" e)
 
         return mst
     }
