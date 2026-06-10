@@ -477,34 +477,6 @@ let slice
             getNearestUpperPowerOfTwo (max (uint64 newRows) (uint64 newCols))
             * 1UL<storageSize>
 
-        let rec cut (size: uint64<storageSize>) (row: uint64<rowindex>) (col: uint64<colindex>) tree =
-            let sizeRow = (uint64 size) * 1UL<rowindex>
-            let sizeCol = (uint64 size) * 1UL<colindex>
-
-            match tree with
-            | Node(nw, ne, sw, se) ->
-                let half = size / 2UL
-                let halfRow = (uint64 half) * 1UL<rowindex>
-                let halfCol = (uint64 half) * 1UL<colindex>
-
-                mkNode
-                    (cut half row col nw)
-                    (cut half row (col + halfCol) ne)
-                    (cut half (row + halfRow) col sw)
-                    (cut half (row + halfRow) (col + halfCol) se)
-            | Leaf(Dummy) -> Leaf Dummy
-            | Leaf(UserValue(v)) when
-                row >= rowStartIdx
-                && row + sizeRow - 1UL<rowindex> <= rowEndIdx
-                && col >= colStartIdx
-                && col + sizeCol - 1UL<colindex> <= colEndIdx
-                ->
-                Leaf(UserValue(v))
-            | _ -> Leaf Dummy
-
-        let cutTree =
-            cut matrix.storage.size 0UL<rowindex> 0UL<colindex> matrix.storage.data
-
         let rec empty (size: uint64<storageSize>) =
             match size with
             | 1UL<storageSize> -> Leaf Dummy
@@ -546,25 +518,47 @@ let slice
                         Node(emptySub, emptySub, emptySub, insert half (row - halfRow) (col - halfCol) value emptySub)
 
         let rec rebuild (size: uint64<storageSize>) (row: uint64<rowindex>) (col: uint64<colindex>) tree acc =
-            match tree with
-            | Leaf(Dummy) -> acc
-            | Leaf(UserValue(v)) ->
-                let newRow = row - uint64 rowStart * 1UL<rowindex>
-                let newCol = col - uint64 colStart * 1UL<colindex>
-                insert newSize newRow newCol v acc
-            | Node(nw, ne, sw, se) ->
-                let half = size / 2UL
-                let halfRow = (uint64 half) * 1UL<rowindex>
-                let halfCol = (uint64 half) * 1UL<colindex>
-                let acc = rebuild half row col nw acc
-                let acc = rebuild half row (col + halfCol) ne acc
-                let acc = rebuild half (row + halfRow) col sw acc
-                rebuild half (row + halfRow) (col + halfCol) se acc
+            let sizeRow = (uint64 size) * 1UL<rowindex>
+            let sizeCol = (uint64 size) * 1UL<colindex>
+
+            if
+                row > rowEndIdx
+                || row + sizeRow - 1UL<rowindex> < rowStartIdx
+                || col > colEndIdx
+                || col + sizeCol - 1UL<colindex> < colStartIdx
+            then
+                acc
+            else
+                match tree with
+                | Leaf(Dummy) -> acc
+                | Leaf(UserValue(v)) ->
+                    if size > 1UL<storageSize> then
+                        let half = size / 2UL
+                        let halfRow = (uint64 half) * 1UL<rowindex>
+                        let halfCol = (uint64 half) * 1UL<colindex>
+
+                        let acc = rebuild half row col (Leaf(UserValue(v))) acc
+                        let acc = rebuild half row (col + halfCol) (Leaf(UserValue(v))) acc
+                        let acc = rebuild half (row + halfRow) col (Leaf(UserValue(v))) acc
+                        rebuild half (row + halfRow) (col + halfCol) (Leaf(UserValue(v))) acc
+                    else
+                        let newRow = row - rowStartIdx
+                        let newCol = col - colStartIdx
+                        insert newSize newRow newCol v acc
+                | Node(nw, ne, sw, se) ->
+                    let half = size / 2UL
+                    let halfRow = (uint64 half) * 1UL<rowindex>
+                    let halfCol = (uint64 half) * 1UL<colindex>
+
+                    let acc = rebuild half row col nw acc
+                    let acc = rebuild half row (col + halfCol) ne acc
+                    let acc = rebuild half (row + halfRow) col sw acc
+                    rebuild half (row + halfRow) (col + halfCol) se acc
 
         let emptyTree = empty newSize
 
         let shiftedTree =
-            rebuild matrix.storage.size 0UL<rowindex> 0UL<colindex> cutTree emptyTree
+            rebuild matrix.storage.size 0UL<rowindex> 0UL<colindex> matrix.storage.data emptyTree
 
         let rec count (size: uint64<storageSize>) tree =
             match tree with

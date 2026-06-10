@@ -594,20 +594,6 @@ let slice (_start: int) (_end: int) (vector: SparseVector<'a>) : Result<SparseVe
         let newLength = uint64 (_end - _start + 1) * 1UL<dataLength>
         let newSize = getNearestUpperPowerOfTwo (uint64 newLength) * 1UL<storageSize>
 
-        let rec cut (size: uint64<storageSize>) (pos: uint64<index>) tree =
-            let sizeIdx = (uint64 size) * 1UL<index>
-
-            match tree with
-            | Node(l, r) ->
-                let half = size / 2UL
-                let halfIdx = (uint64 half) * 1UL<index>
-                Node(cut half pos l, cut half (pos + halfIdx) r)
-            | Leaf(Dummy) -> Leaf Dummy
-            | Leaf(UserValue(v)) when pos >= startIdx && pos + sizeIdx - 1UL<index> <= endIdx -> Leaf(UserValue(v))
-            | _ -> Leaf Dummy
-
-        let cutTree = cut vector.storage.size 0UL<index> vector.storage.data
-
         let rec empty (size: uint64<storageSize>) =
             match size with
             | 1UL<storageSize> -> Leaf Dummy
@@ -638,19 +624,32 @@ let slice (_start: int) (_end: int) (vector: SparseVector<'a>) : Result<SparseVe
                         Node(emptySub, insert half (idx - border) value emptySub)
 
         let rec rebuild (size: uint64<storageSize>) (pos: uint64<index>) tree acc =
-            match tree with
-            | Leaf(Dummy) -> acc
-            | Leaf(UserValue(v)) ->
-                let newIdx = pos - startIdx
-                insert newSize newIdx v acc
-            | Node(left, right) ->
-                let half = size / 2UL
-                let border = (uint64 half) * 1UL<index>
-                let acc = rebuild half pos left acc
-                rebuild half (pos + border) right acc
+            let sizeIdx = (uint64 size) * 1UL<index>
+
+            if pos > endIdx || pos + sizeIdx - 1UL<index> < startIdx then
+                acc
+            else
+                match tree with
+                | Leaf(Dummy) -> acc
+                | Leaf(UserValue(v)) ->
+                    if size > 1UL<storageSize> then
+                        let half = size / 2UL
+                        let border = (uint64 half) * 1UL<index>
+                        let acc = rebuild half pos (Leaf(UserValue(v))) acc
+                        rebuild half (pos + border) (Leaf(UserValue(v))) acc
+                    else
+                        let newIdx = pos - startIdx
+                        insert newSize newIdx v acc
+                | Node(left, right) ->
+                    let half = size / 2UL
+                    let border = (uint64 half) * 1UL<index>
+                    let acc = rebuild half pos left acc
+                    rebuild half (pos + border) right acc
 
         let emptyTree = empty newSize
-        let shiftedTree = rebuild vector.storage.size 0UL<index> cutTree emptyTree
+
+        let shiftedTree =
+            rebuild vector.storage.size 0UL<index> vector.storage.data emptyTree
 
         let rec count (size: uint64<storageSize>) tree =
             match tree with

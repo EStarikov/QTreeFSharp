@@ -1,0 +1,87 @@
+namespace QuadTree.Benchmarks.MatrixSlice
+
+open BenchmarkDotNet.Attributes
+open QuadTree.Benchmarks.Utils
+
+[<Config(typeof<MyConfig>)>]
+[<MemoryDiagnoser>]
+type Benchmark() =
+
+    let mutable sparseSmall = Unchecked.defaultof<Matrix.SparseMatrix<double>>
+    let mutable denseSmall = Unchecked.defaultof<Matrix.SparseMatrix<double>>
+    let mutable sparseMedium = Unchecked.defaultof<Matrix.SparseMatrix<double>>
+    let mutable denseMedium = Unchecked.defaultof<Matrix.SparseMatrix<double>>
+    let mutable sparseLarge = Unchecked.defaultof<Matrix.SparseMatrix<double>>
+    let mutable denseLarge = Unchecked.defaultof<Matrix.SparseMatrix<double>>
+
+    member private this.CreateSparseMatrix size density =
+        let rng = System.Random(42)
+
+        let coords =
+            [ for i in 0UL .. size - 1UL do
+                  for j in 0UL .. size - 1UL do
+                      if rng.NextDouble() < density then
+                          (i * 1UL<Matrix.rowindex>, j * 1UL<Matrix.colindex>, rng.NextDouble()) ]
+
+        match
+            Matrix.fromCoordinateList (
+                Matrix.CoordinateList(size * 1UL<Matrix.nrows>, size * 1UL<Matrix.ncols>, coords)
+            )
+        with
+        | Ok m -> m
+        | Error msg -> failwith $"Failed to create sparse matrix: {msg}"
+
+    member private this.CreateDenseMatrix size =
+        let coords =
+            [ for i in 0UL .. size - 1UL do
+                  for j in 0UL .. size - 1UL do
+                      (i * 1UL<Matrix.rowindex>, j * 1UL<Matrix.colindex>, 1.0) ]
+
+        match
+            Matrix.fromCoordinateList (
+                Matrix.CoordinateList(size * 1UL<Matrix.nrows>, size * 1UL<Matrix.ncols>, coords)
+            )
+        with
+        | Ok m -> m
+        | Error msg -> failwith $"Failed to create dense matrix: {msg}"
+
+    [<GlobalSetup>]
+    member this.Setup() =
+        let sizeSmall = 32UL
+        let sizeMedium = 256UL
+        let sizeLarge = 1024UL
+
+        sparseSmall <- this.CreateSparseMatrix sizeSmall 0.10
+        denseSmall <- this.CreateDenseMatrix sizeSmall
+        sparseMedium <- this.CreateSparseMatrix sizeMedium 0.05
+        denseMedium <- this.CreateDenseMatrix sizeMedium
+        sparseLarge <- this.CreateSparseMatrix sizeLarge 0.01
+        denseLarge <- this.CreateDenseMatrix sizeLarge
+
+    // Срез середины (n/4 .. 3n/4 - 1)
+    member private this.SliceMiddle(m: Matrix.SparseMatrix<double>) =
+        let n = int m.nrows
+        let start = n / 4
+        let last = 3 * n / 4 - 1
+
+        match Matrix.slice m start last start last with
+        | Ok res -> res
+        | Error _ -> failwith "Slice failed"
+
+    [<Benchmark>]
+    member this.MatrixSlice_SparseSmall() = this.SliceMiddle sparseSmall
+
+    [<Benchmark>]
+    member this.MatrixSlice_DenseSmall() = this.SliceMiddle denseSmall
+
+    [<Benchmark>]
+    member this.MatrixSlice_SparseMedium() = this.SliceMiddle sparseMedium
+
+    [<Benchmark>]
+    member this.MatrixSlice_DenseMedium() = this.SliceMiddle denseMedium
+
+    [<Benchmark>]
+    member this.MatrixSlice_SparseLarge() = this.SliceMiddle sparseLarge
+
+    [<Benchmark>]
+    member this.MatrixSlice_DenseLarge() = this.SliceMiddle denseLarge

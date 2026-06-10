@@ -1337,6 +1337,35 @@ let ``slice returns single row`` () =
     | Result.Error msg -> Assert.Fail(msg)
 
 [<Fact>]
+let ``slice middle of dense matrix returns correct values`` () =
+    let nrows = 64UL<nrows>
+    let ncols = 64UL<ncols>
+
+    let coords =
+        [ for r in 0UL .. 63UL do
+              for c in 0UL .. 63UL do
+                  (r * 1UL<rowindex>, c * 1UL<colindex>, 1.0) ]
+
+    match Matrix.fromCoordinateList (Matrix.CoordinateList(nrows, ncols, coords)) with
+    | Error msg -> Assert.Fail($"Failed to create dense matrix: {msg}")
+    | Ok m ->
+        match Matrix.slice m 16 47 16 47 with
+        | Error msg -> Assert.Fail($"Slice failed: {msg}")
+        | Ok sliced ->
+            Assert.Equal(32UL<nrows>, sliced.nrows)
+            Assert.Equal(32UL<ncols>, sliced.ncols)
+
+            let coo = Matrix.toCoordinateList sliced
+            let elements = coo.list
+
+            Assert.Equal(1024, List.length elements)
+
+            for (_, _, v) in elements do
+                Assert.Equal(1.0, v)
+
+            Assert.Equal(1024UL<nvals>, sliced.nvals)
+
+[<Fact>]
 let ``let reduceRows sum on square power of two matrix`` () =
     let coo =
         CoordinateList(
