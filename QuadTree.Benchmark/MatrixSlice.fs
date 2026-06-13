@@ -14,36 +14,34 @@ type Benchmark() =
     let mutable sparseLarge = Unchecked.defaultof<Matrix.SparseMatrix<double>>
     let mutable denseLarge = Unchecked.defaultof<Matrix.SparseMatrix<double>>
 
-    member private this.CreateSparseMatrix size density =
-        let rng = System.Random(42)
+    let private rngSeed = 42
 
+    member private this.CreateMatrix size generateValue =
+        let rng = System.Random(rngSeed)
         let coords =
             [ for i in 0UL .. size - 1UL do
-                  for j in 0UL .. size - 1UL do
-                      if rng.NextDouble() < density then
-                          (i * 1UL<Matrix.rowindex>, j * 1UL<Matrix.colindex>, rng.NextDouble()) ]
-
-        match
-            Matrix.fromCoordinateList (
-                Matrix.CoordinateList(size * 1UL<Matrix.nrows>, size * 1UL<Matrix.ncols>, coords)
+                for j in 0UL .. size - 1UL do
+                    match generateValue rng i j with
+                    | Some v -> (i * 1UL<Matrix.rowindex>, j * 1UL<Matrix.colindex>, v)
+                    | None -> () ]
+        match Matrix.fromCoordinateList (
+            Matrix.CoordinateList(
+                size * 1UL<Matrix.nrows>,
+                size * 1UL<Matrix.ncols>,
+                coords
             )
-        with
+        ) with
         | Ok m -> m
-        | Error msg -> failwith $"Failed to create sparse matrix: {msg}"
+        | Error msg -> failwith $"Failed to create matrix: {msg}"
+
+    member private this.CreateSparseMatrix size density =
+        let generateValue rng i j =
+            if rng.NextDouble() < density then Some(rng.NextDouble()) else None
+        this.CreateMatrix size generateValue
 
     member private this.CreateDenseMatrix size =
-        let coords =
-            [ for i in 0UL .. size - 1UL do
-                  for j in 0UL .. size - 1UL do
-                      (i * 1UL<Matrix.rowindex>, j * 1UL<Matrix.colindex>, 1.0) ]
-
-        match
-            Matrix.fromCoordinateList (
-                Matrix.CoordinateList(size * 1UL<Matrix.nrows>, size * 1UL<Matrix.ncols>, coords)
-            )
-        with
-        | Ok m -> m
-        | Error msg -> failwith $"Failed to create dense matrix: {msg}"
+        let generateValue _ _ _ = Some 1.0
+        this.CreateMatrix size generateValue
 
     [<GlobalSetup>]
     member this.Setup() =
@@ -58,7 +56,6 @@ type Benchmark() =
         sparseLarge <- this.CreateSparseMatrix sizeLarge 0.01
         denseLarge <- this.CreateDenseMatrix sizeLarge
 
-    // Срез середины (n/4 .. 3n/4 - 1)
     member private this.SliceMiddle(m: Matrix.SparseMatrix<double>) =
         let n = int m.nrows
         let start = n / 4

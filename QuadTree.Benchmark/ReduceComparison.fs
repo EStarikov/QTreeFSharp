@@ -20,36 +20,34 @@ type Benchmark() =
         | None, Some a -> Some a
         | _ -> None
 
-    member private this.CreateSparseMatrix size density =
-        let rng = System.Random(42)
+    let private rngSeed = 42
 
+    member private this.CreateMatrix size generateValue =
+        let rng = System.Random(rngSeed)
         let coords =
             [ for i in 0UL .. size - 1UL do
-                  for j in 0UL .. size - 1UL do
-                      if rng.NextDouble() < density then
-                          (i * 1UL<Matrix.rowindex>, j * 1UL<Matrix.colindex>, rng.NextDouble()) ]
-
-        match
-            Matrix.fromCoordinateList (
-                Matrix.CoordinateList(size * 1UL<Matrix.nrows>, size * 1UL<Matrix.ncols>, coords)
+                for j in 0UL .. size - 1UL do
+                    match generateValue rng i j with
+                    | Some v -> (i * 1UL<Matrix.rowindex>, j * 1UL<Matrix.colindex>, v)
+                    | None -> () ]
+        match Matrix.fromCoordinateList (
+            Matrix.CoordinateList(
+                size * 1UL<Matrix.nrows>,
+                size * 1UL<Matrix.ncols>,
+                coords
             )
-        with
+        ) with
         | Ok m -> m
         | Error msg -> failwith $"Failed to create matrix: {msg}"
+
+    member private this.CreateSparseMatrix size density =
+        let generateValue rng i j =
+            if rng.NextDouble() < density then Some(rng.NextDouble()) else None
+        this.CreateMatrix size generateValue
 
     member private this.CreateDenseMatrix size =
-        let coords =
-            [ for i in 0UL .. size - 1UL do
-                  for j in 0UL .. size - 1UL do
-                      (i * 1UL<Matrix.rowindex>, j * 1UL<Matrix.colindex>, 1.0) ]
-
-        match
-            Matrix.fromCoordinateList (
-                Matrix.CoordinateList(size * 1UL<Matrix.nrows>, size * 1UL<Matrix.ncols>, coords)
-            )
-        with
-        | Ok m -> m
-        | Error msg -> failwith $"Failed to create matrix: {msg}"
+        let generateValue _ _ _ = Some 1.0
+        this.CreateMatrix size generateValue
 
     [<GlobalSetup>]
     member this.Setup() =
@@ -64,7 +62,7 @@ type Benchmark() =
         sparseLarge <- this.CreateSparseMatrix sizeLarge 0.01
         denseLarge <- this.CreateDenseMatrix sizeLarge
 
-    // ========== Оригинальный reduceCols ==========
+    // ========== Original reduceCols ==========
     [<Benchmark>]
     member this.ReduceCols_SparseSmall() = Matrix.reduceCols add sparseSmall
 
@@ -83,7 +81,7 @@ type Benchmark() =
     [<Benchmark>]
     member this.ReduceCols_DenseLarge() = Matrix.reduceCols add denseLarge
 
-    // ========== reduceCols через транспонирование ==========
+    // ========== reduceCols via transpose ==========
     [<Benchmark>]
     member this.ReduceColsViaTranspose_SparseSmall() =
         let transposed = Matrix.transpose sparseSmall

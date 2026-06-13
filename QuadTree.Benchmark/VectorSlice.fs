@@ -13,26 +13,27 @@ type Benchmark() =
     let mutable sparseLarge = Unchecked.defaultof<Vector.SparseVector<double>>
     let mutable denseLarge = Unchecked.defaultof<Vector.SparseVector<double>>
 
-    member private this.CreateSparseVector size density =
-        let rng = System.Random(42)
+    let private rngSeed = 42
 
+    member private this.CreateVector size generateValue =
+        let rng = System.Random(rngSeed)
         let coords =
             [ for i in 0UL .. size - 1UL do
-                  if rng.NextDouble() < density then
-                      (i * 1UL<Vector.index>, rng.NextDouble()) ]
-
+                match generateValue rng i with
+                | Some v -> (i * 1UL<Vector.index>, v)
+                | None -> () ]
         match Vector.fromCoordinateList (Vector.CoordinateList(size * 1UL<Vector.dataLength>, coords)) with
         | Ok v -> v
         | Error msg -> failwith $"Failed to create vector: {msg}"
+
+    member private this.CreateSparseVector size density =
+        let generateValue rng i =
+            if rng.NextDouble() < density then Some(rng.NextDouble()) else None
+        this.CreateVector size generateValue
 
     member private this.CreateDenseVector size =
-        let coords =
-            [ for i in 0UL .. size - 1UL do
-                  (i * 1UL<Vector.index>, 1.0) ]
-
-        match Vector.fromCoordinateList (Vector.CoordinateList(size * 1UL<Vector.dataLength>, coords)) with
-        | Ok v -> v
-        | Error msg -> failwith $"Failed to create vector: {msg}"
+        let generateValue _ _ = Some 1.0
+        this.CreateVector size generateValue
 
     [<GlobalSetup>]
     member this.Setup() =
