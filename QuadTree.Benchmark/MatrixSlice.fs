@@ -14,29 +14,33 @@ type Benchmark() =
     let mutable sparseLarge = Unchecked.defaultof<Matrix.SparseMatrix<double>>
     let mutable denseLarge = Unchecked.defaultof<Matrix.SparseMatrix<double>>
 
-    let private rngSeed = 42
+    let rngSeed = 42
 
-    member private this.CreateMatrix size generateValue =
+    member private this.CreateMatrix size (generateValue: System.Random -> uint64 -> uint64 -> Option<float>) =
         let rng = System.Random(rngSeed)
+
         let coords =
             [ for i in 0UL .. size - 1UL do
-                for j in 0UL .. size - 1UL do
-                    match generateValue rng i j with
-                    | Some v -> (i * 1UL<Matrix.rowindex>, j * 1UL<Matrix.colindex>, v)
-                    | None -> () ]
-        match Matrix.fromCoordinateList (
-            Matrix.CoordinateList(
-                size * 1UL<Matrix.nrows>,
-                size * 1UL<Matrix.ncols>,
-                coords
+                  for j in 0UL .. size - 1UL do
+                      match generateValue rng i j with
+                      | Some v -> (i * 1UL<Matrix.rowindex>, j * 1UL<Matrix.colindex>, v)
+                      | None -> () ]
+
+        match
+            Matrix.fromCoordinateList (
+                Matrix.CoordinateList(size * 1UL<Matrix.nrows>, size * 1UL<Matrix.ncols>, coords)
             )
-        ) with
+        with
         | Ok m -> m
         | Error msg -> failwith $"Failed to create matrix: {msg}"
 
     member private this.CreateSparseMatrix size density =
-        let generateValue rng i j =
-            if rng.NextDouble() < density then Some(rng.NextDouble()) else None
+        let generateValue (rng: System.Random) _ _ =
+            if rng.NextDouble() < density then
+                Some(rng.NextDouble())
+            else
+                None
+
         this.CreateMatrix size generateValue
 
     member private this.CreateDenseMatrix size =
