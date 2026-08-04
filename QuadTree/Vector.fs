@@ -576,7 +576,6 @@ let scatter
             (Ok w)
     | Error x -> Error Error.InconsistentStructureOfStorages
 
-
 let slice (_start: int) (_end: int) (vector: SparseVector<'a>) : Result<SparseVector<'a>, string> =
     if _start < 0 then
         Error "Start should be >= 0"
@@ -594,71 +593,70 @@ let slice (_start: int) (_end: int) (vector: SparseVector<'a>) : Result<SparseVe
         let newLength = uint64 (_end - _start + 1) * 1UL<dataLength>
         let newSize = getNearestUpperPowerOfTwo (uint64 newLength) * 1UL<storageSize>
 
-        let rec empty (size: uint64<storageSize>) =
-            match size with
-            | 1UL<storageSize> -> Leaf Dummy
-            | _ ->
-                let half = size / 2UL
-                let subtree = empty half
-                Node(subtree, subtree)
+        let rec narrowOld
+            (oldPos: uint64<index>)
+            (oldSize: uint64<storageSize>)
+            (oldTree: btree<Option<'a>>)
+            (qStart: uint64<index>)
+            (qEnd: uint64<index>)
+            : struct (uint64<index> * uint64<storageSize> * btree<Option<'a>>) =
 
-        let rec insert (size: uint64<storageSize>) (idx: uint64<index>) value tree =
-            match size with
-            | 1UL<storageSize> -> Leaf(UserValue(value))
-            | _ ->
-                let half = size / 2UL
-                let border = (uint64 half) * 1UL<index>
+            match oldTree with
+            | Leaf _ -> struct (oldPos, oldSize, oldTree)
+            | Node(left, right) ->
+                let half = oldSize / 2UL
+                let mid = oldPos + (uint64 half) * 1UL<index>
 
-                match tree with
-                | Node(left, right) ->
-                    if idx < border then
-                        Node(insert half idx value left, right)
-                    else
-                        Node(left, insert half (idx - border) value right)
-                | _ ->
-                    let emptySub = empty half
+                let crosses = qStart < mid && qEnd >= mid
 
-                    if idx < border then
-                        Node(insert half idx value emptySub, emptySub)
-                    else
-                        Node(emptySub, insert half (idx - border) value emptySub)
+                if crosses then struct (oldPos, oldSize, oldTree)
+                elif qEnd < mid then narrowOld oldPos half left qStart qEnd
+                else narrowOld mid half right qStart qEnd
 
-        let rec rebuild (size: uint64<storageSize>) (pos: uint64<index>) tree acc =
-            let sizeIdx = (uint64 size) * 1UL<index>
+        let rec buildNewTree
+            (targetSize: uint64<storageSize>)
+            (relPos: uint64<index>)
+            (oldPos: uint64<index>)
+            (oldSize: uint64<storageSize>)
+            (oldTree: btree<Option<'a>>)
+            : struct (btree<Option<'a>> * uint64<nvals>) =
 
-            if pos > endIdx || pos + sizeIdx - 1UL<index> < startIdx then
-                acc
+            let absPos = startIdx + relPos
+            let absEnd = absPos + (uint64 targetSize * 1UL<index>) - 1UL<index>
+
+            if absPos > endIdx then
+                struct (Leaf Dummy, 0UL<nvals>)
             else
-                match tree with
-                | Leaf(Dummy) -> acc
-                | Leaf(UserValue(v)) ->
-                    if size > 1UL<storageSize> then
-                        let half = size / 2UL
-                        let border = (uint64 half) * 1UL<index>
-                        let acc = rebuild half pos (Leaf(UserValue(v))) acc
-                        rebuild half (pos + border) (Leaf(UserValue(v))) acc
+                let queryEnd = if absEnd > endIdx then endIdx else absEnd
+                let struct (nPos, nSize, nTree) = narrowOld oldPos oldSize oldTree absPos queryEnd
+                let fullyInBounds = absEnd <= endIdx
+
+                match nTree with
+                | Leaf Dummy -> struct (Leaf Dummy, 0UL<nvals>)
+                | Leaf(UserValue None) when fullyInBounds -> struct (Leaf(UserValue None), 0UL<nvals>)
+                | Leaf(UserValue(Some v)) when fullyInBounds ->
+                    let blockSize = (uint64 nSize) * 1UL<nvals>
+                    struct (Leaf(UserValue(Some v)), blockSize)
+                | _ ->
+                    if targetSize = 1UL<storageSize> then
+                        struct (Leaf Dummy, 0UL<nvals>)
                     else
-                        let newIdx = pos - startIdx
-                        insert newSize newIdx v acc
-                | Node(left, right) ->
-                    let half = size / 2UL
-                    let border = (uint64 half) * 1UL<index>
-                    let acc = rebuild half pos left acc
-                    rebuild half (pos + border) right acc
+                        let half = targetSize / 2UL
+                        let halfIdx = (uint64 half) * 1UL<index>
 
-        let emptyTree = empty newSize
+                        let struct (leftTree, leftNvals) = buildNewTree half relPos nPos nSize nTree
 
-        let shiftedTree =
-            rebuild vector.storage.size 0UL<index> vector.storage.data emptyTree
+                        let struct (rightTree, rightNvals) =
+                            buildNewTree half (relPos + halfIdx) nPos nSize nTree
 
-        let rec count (size: uint64<storageSize>) tree =
-            match tree with
-            | Node(l, r) ->
-                let half = size / 2UL
-                count half l + count half r
-            | Leaf(UserValue(_)) -> (uint64 size) * 1UL<nvals>
-            | _ -> 0UL<nvals>
+                        let totalNvals = leftNvals + rightNvals
 
-        let nvals = count newSize shiftedTree
+                        if totalNvals = 0UL<nvals> then
+                            struct (Leaf Dummy, 0UL<nvals>)
+                        else
+                            struct (mkNode leftTree rightTree, totalNvals)
 
-        Ok(SparseVector(newLength, nvals, Storage(newSize, shiftedTree)))
+        let struct (finalTree, finalNvals) =
+            buildNewTree newSize 0UL<index> 0UL<index> vector.storage.size vector.storage.data
+
+        Ok(SparseVector(newLength, finalNvals, Storage(newSize, finalTree)))

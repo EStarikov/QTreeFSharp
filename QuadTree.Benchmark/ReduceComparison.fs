@@ -1,17 +1,13 @@
 namespace QuadTree.Benchmarks.ReduceComparison
 
+open System
+open System.IO
 open BenchmarkDotNet.Attributes
 open QuadTree.Benchmarks.Utils
 
 [<Config(typeof<MyConfig>)>]
+[<MemoryDiagnoser>]
 type Benchmark() =
-
-    let mutable sparseSmall = Unchecked.defaultof<Matrix.SparseMatrix<double>>
-    let mutable denseSmall = Unchecked.defaultof<Matrix.SparseMatrix<double>>
-    let mutable sparseMedium = Unchecked.defaultof<Matrix.SparseMatrix<double>>
-    let mutable denseMedium = Unchecked.defaultof<Matrix.SparseMatrix<double>>
-    let mutable sparseLarge = Unchecked.defaultof<Matrix.SparseMatrix<double>>
-    let mutable denseLarge = Unchecked.defaultof<Matrix.SparseMatrix<double>>
 
     let add x y =
         match x, y with
@@ -20,98 +16,95 @@ type Benchmark() =
         | None, Some a -> Some a
         | _ -> None
 
-    let rngSeed = 42
+    [<Params("g7jac010sc",
+             "g7jac020",
+             "g7jac020sc",
+             "g7jac040",
+             "g7jac040sc",
+             "g7jac050sc",
+             "g7jac060",
+             "g7jac060sc",
+             "g7jac080",
+             "g7jac100",
+             "g7jac100sc",
+             "g7jac120",
+             "g7jac120sc",
+             "g7jac140",
+             "g7jac140sc",
+             "g7jac160",
+             "jan99jac020",
+             "jan99jac020sc",
+             "mark3jac020",
+             "mark3jac020sc",
+             "mesh2e1",
+             "mesh3em5",
+             "pwt",
+             "shuttle_eddy",
+             "tandem_vtx",
+             "bcsstk01",
+             "cavity01",
+             "cavity05",
+             "cavity10",
+             "email-Eu-core")>]
+    member val MatrixName = "" with get, set
 
-    member private this.CreateMatrix size (generateValue: System.Random -> uint64 -> uint64 -> Option<float>) =
-        let rng = System.Random(rngSeed)
+    member val Matrix = Unchecked.defaultof<Matrix.SparseMatrix<double>> with get, set
+    member val Size = 0 with get, set
+    member val Density = 0.0 with get, set
+    member val IsSymmetric = false with get, set
 
-        let coords =
-            [ for i in 0UL .. size - 1UL do
-                  for j in 0UL .. size - 1UL do
-                      match generateValue rng i j with
-                      | Some v -> (i * 1UL<Matrix.rowindex>, j * 1UL<Matrix.colindex>, v)
-                      | None -> () ]
+    member private this.CheckSymmetric(m: Matrix.SparseMatrix<double>) =
+        let coo = Matrix.toCoordinateList m
+        let dict = System.Collections.Generic.Dictionary<string, double>()
 
-        match
-            Matrix.fromCoordinateList (
-                Matrix.CoordinateList(size * 1UL<Matrix.nrows>, size * 1UL<Matrix.ncols>, coords)
-            )
-        with
-        | Ok m -> m
-        | Error msg -> failwith $"Failed to create matrix: {msg}"
+        for (i, j, v) in coo.list do
+            let key = $"{uint64 i},{uint64 j}"
+            dict.[key] <- v
 
-    member private this.CreateSparseMatrix size density =
-        let generateValue (rng: System.Random) _ _ =
-            if rng.NextDouble() < density then
-                Some(rng.NextDouble())
-            else
-                None
+        let mutable sym = true
 
-        this.CreateMatrix size generateValue
+        for (i, j, v) in coo.list do
+            let key = $"{uint64 j},{uint64 i}"
 
-    member private this.CreateDenseMatrix size =
-        let generateValue _ _ _ = Some 1.0
-        this.CreateMatrix size generateValue
+            match dict.TryGetValue(key) with
+            | true, v2 when v = v2 -> ()
+            | _ -> sym <- false
+
+        sym
 
     [<GlobalSetup>]
     member this.Setup() =
-        let sizeSmall = 32UL
-        let sizeMedium = 256UL
-        let sizeLarge = 1024UL
+        let rec findProjectRoot (dir: string) =
+            if Directory.Exists(Path.Combine(dir, "data")) then
+                dir
+            else
+                let parent = Directory.GetParent(dir)
 
-        sparseSmall <- this.CreateSparseMatrix sizeSmall 0.10
-        denseSmall <- this.CreateDenseMatrix sizeSmall
-        sparseMedium <- this.CreateSparseMatrix sizeMedium 0.05
-        denseMedium <- this.CreateDenseMatrix sizeMedium
-        sparseLarge <- this.CreateSparseMatrix sizeLarge 0.01
-        denseLarge <- this.CreateDenseMatrix sizeLarge
+                if parent = null then
+                    failwith "Не найден корень проекта (папка data)"
+                else
+                    findProjectRoot parent.FullName
 
-    // ========== Original reduceCols ==========
-    [<Benchmark>]
-    member this.ReduceCols_SparseSmall() = Matrix.reduceCols add sparseSmall
+        let projectRoot = findProjectRoot __SOURCE_DIRECTORY__
 
-    [<Benchmark>]
-    member this.ReduceCols_DenseSmall() = Matrix.reduceCols add denseSmall
+        let path =
+            Path.Combine(projectRoot, "data", "Reduce_matrices", $"{this.MatrixName}.mtx")
 
-    [<Benchmark>]
-    member this.ReduceCols_SparseMedium() = Matrix.reduceCols add sparseMedium
+        if not (File.Exists path) then
+            failwithf "Файл не найден: %s\nИщем в: %s" path projectRoot
 
-    [<Benchmark>]
-    member this.ReduceCols_DenseMedium() = Matrix.reduceCols add denseMedium
-
-    [<Benchmark>]
-    member this.ReduceCols_SparseLarge() = Matrix.reduceCols add sparseLarge
-
-    [<Benchmark>]
-    member this.ReduceCols_DenseLarge() = Matrix.reduceCols add denseLarge
-
-    // ========== reduceCols via transpose ==========
-    [<Benchmark>]
-    member this.ReduceColsViaTranspose_SparseSmall() =
-        let transposed = Matrix.transpose sparseSmall
-        Matrix.reduceRows add transposed
+        match QuadTree.Benchmarks.Utils.readMtx path false with
+        | Ok m ->
+            this.Matrix <- m
+            this.Size <- int m.nrows
+            this.Density <- float m.nvals / (float m.nrows * float m.ncols)
+            this.IsSymmetric <- this.CheckSymmetric(m)
+        | Error msg -> failwithf "Не удалось загрузить %s: %s" this.MatrixName msg
 
     [<Benchmark>]
-    member this.ReduceColsViaTranspose_DenseSmall() =
-        let transposed = Matrix.transpose denseSmall
-        Matrix.reduceRows add transposed
+    member this.ReduceCols_Original() = Matrix.reduceCols add this.Matrix
 
     [<Benchmark>]
-    member this.ReduceColsViaTranspose_SparseMedium() =
-        let transposed = Matrix.transpose sparseMedium
-        Matrix.reduceRows add transposed
-
-    [<Benchmark>]
-    member this.ReduceColsViaTranspose_DenseMedium() =
-        let transposed = Matrix.transpose denseMedium
-        Matrix.reduceRows add transposed
-
-    [<Benchmark>]
-    member this.ReduceColsViaTranspose_SparseLarge() =
-        let transposed = Matrix.transpose sparseLarge
-        Matrix.reduceRows add transposed
-
-    [<Benchmark>]
-    member this.ReduceColsViaTranspose_DenseLarge() =
-        let transposed = Matrix.transpose denseLarge
+    member this.ReduceCols_ViaTranspose() =
+        let transposed = Matrix.transpose this.Matrix
         Matrix.reduceRows add transposed

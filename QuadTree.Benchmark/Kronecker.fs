@@ -1,5 +1,6 @@
 namespace QuadTree.Benchmarks.Kronecker
 
+open System
 open BenchmarkDotNet.Attributes
 open QuadTree.Benchmarks.Utils
 
@@ -7,93 +8,46 @@ open QuadTree.Benchmarks.Utils
 [<MemoryDiagnoser>]
 type Benchmark() =
 
-    let mutable sparseSmall = Unchecked.defaultof<Matrix.SparseMatrix<double>>
-    let mutable denseSmall = Unchecked.defaultof<Matrix.SparseMatrix<double>>
-    let mutable sparseMedium = Unchecked.defaultof<Matrix.SparseMatrix<double>>
-    let mutable denseMedium = Unchecked.defaultof<Matrix.SparseMatrix<double>>
-    let mutable sparseLarge = Unchecked.defaultof<Matrix.SparseMatrix<double>>
-    let mutable denseLarge = Unchecked.defaultof<Matrix.SparseMatrix<double>>
+    [<Params(100, 150)>]
+    member val SizeA = 0 with get, set
 
-    let rngSeed = 42
+    [<Params(100, 150, 200)>]
+    member val SizeB = 0 with get, set
 
-    member private this.CreateMatrix size (generateValue: System.Random -> uint64 -> uint64 -> Option<float>) =
-        let rng = System.Random(rngSeed)
+    [<Params(0.005, 0.01, 0.05, 0.1)>]
+    member val DensityB = 0.0 with get, set
 
+    [<Params(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)>]
+    member val Seed = 0 with get, set
+
+    member val A = Unchecked.defaultof<Matrix.SparseMatrix<double>> with get, set
+    member val B = Unchecked.defaultof<Matrix.SparseMatrix<double>> with get, set
+
+    member private this.GenerateMatrix(size: int, density: float, rng: Random) =
         let coords =
-            [ for i in 0UL .. size - 1UL do
-                  for j in 0UL .. size - 1UL do
-                      match generateValue rng i j with
-                      | Some v -> (i * 1UL<Matrix.rowindex>, j * 1UL<Matrix.colindex>, v)
-                      | None -> () ]
+            [ for i in 0 .. size - 1 do
+                  for j in 0 .. size - 1 do
+                      if rng.NextDouble() < density then
+                          let value = double (rng.Next(1, 4))
+                          yield (uint64 i * 1UL<Matrix.rowindex>, uint64 j * 1UL<Matrix.colindex>, value) ]
 
         match
             Matrix.fromCoordinateList (
-                Matrix.CoordinateList(size * 1UL<Matrix.nrows>, size * 1UL<Matrix.ncols>, coords)
+                Matrix.CoordinateList(uint64 size * 1UL<Matrix.nrows>, uint64 size * 1UL<Matrix.ncols>, coords)
             )
         with
         | Ok m -> m
-        | Error msg -> failwith $"Failed to create matrix: {msg}"
-
-    member private this.CreateSparseMatrix size density =
-        let generateValue (rng: System.Random) _ _ =
-            if rng.NextDouble() < density then
-                Some(rng.NextDouble())
-            else
-                None
-
-        this.CreateMatrix size generateValue
-
-    member private this.CreateDenseMatrix size =
-        let generateValue _ _ _ = Some 1.0
-        this.CreateMatrix size generateValue
+        | Error msg -> failwithf "Failed to create matrix: %s" msg
 
     [<GlobalSetup>]
     member this.Setup() =
-        let sizeSmall = 8UL
-        let sizeMedium = 16UL
-        let sizeLarge = 32UL
-
-        sparseSmall <- this.CreateSparseMatrix sizeSmall 0.10
-        denseSmall <- this.CreateDenseMatrix sizeSmall
-        sparseMedium <- this.CreateSparseMatrix sizeMedium 0.05
-        denseMedium <- this.CreateDenseMatrix sizeMedium
-        sparseLarge <- this.CreateSparseMatrix sizeLarge 0.01
-        denseLarge <- this.CreateDenseMatrix sizeLarge
-
-    member private this.Mult a b = Some(a * b)
+        let rng = Random(this.Seed)
+        this.A <- this.GenerateMatrix(this.SizeA, 0.01, rng)
+        this.B <- this.GenerateMatrix(this.SizeB, this.DensityB, rng)
 
     [<Benchmark>]
-    member this.Kronecker_SparseSmall() =
-        match Matrix.kroneckerProduct sparseSmall sparseSmall this.Mult with
+    member this.Kronecker() =
+        match Matrix.kroneckerProduct this.A this.B (fun a b -> Some(a * b)) with
         | Ok res -> res
-        | Error _ -> failwith "Kronecker failed"
-
-    [<Benchmark>]
-    member this.Kronecker_DenseSmall() =
-        match Matrix.kroneckerProduct denseSmall denseSmall this.Mult with
-        | Ok res -> res
-        | Error _ -> failwith "Kronecker failed"
-
-    [<Benchmark>]
-    member this.Kronecker_SparseMedium() =
-        match Matrix.kroneckerProduct sparseMedium sparseMedium this.Mult with
-        | Ok res -> res
-        | Error _ -> failwith "Kronecker failed"
-
-    [<Benchmark>]
-    member this.Kronecker_DenseMedium() =
-        match Matrix.kroneckerProduct denseMedium denseMedium this.Mult with
-        | Ok res -> res
-        | Error _ -> failwith "Kronecker failed"
-
-    [<Benchmark>]
-    member this.Kronecker_SparseLarge() =
-        match Matrix.kroneckerProduct sparseLarge sparseLarge this.Mult with
-        | Ok res -> res
-        | Error _ -> failwith "Kronecker failed"
-
-    [<Benchmark>]
-    member this.Kronecker_DenseLarge() =
-        match Matrix.kroneckerProduct denseLarge denseLarge this.Mult with
-        | Ok res -> res
-        | Error _ -> failwith "Kronecker failed"
+        | Error msg -> failwithf "Kronecker failed: %s" msg
+        |> ignore

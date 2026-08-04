@@ -1,58 +1,45 @@
 namespace QuadTree.Benchmarks.VectorSlice
 
+open System
 open BenchmarkDotNet.Attributes
+open BenchmarkDotNet.Configs
+open BenchmarkDotNet.Jobs
 open QuadTree.Benchmarks.Utils
 
-[<Config(typeof<MyConfig>)>]
+type RealConfig() =
+    inherit ManualConfig()
+    do base.AddJob(Job.Default.WithWarmupCount(5).WithIterationCount(10)) |> ignore
+
+[<Config(typeof<RealConfig>)>]
+[<MemoryDiagnoser>]
 type Benchmark() =
 
-    let mutable sparseSmall = Unchecked.defaultof<Vector.SparseVector<double>>
-    let mutable denseSmall = Unchecked.defaultof<Vector.SparseVector<double>>
-    let mutable sparseMedium = Unchecked.defaultof<Vector.SparseVector<double>>
-    let mutable denseMedium = Unchecked.defaultof<Vector.SparseVector<double>>
-    let mutable sparseLarge = Unchecked.defaultof<Vector.SparseVector<double>>
-    let mutable denseLarge = Unchecked.defaultof<Vector.SparseVector<double>>
+    [<Params(1000000, 2000000, 2500000, 4000000, 5000000, 7500000)>]
+    member val Size = 0 with get, set
 
-    let rngSeed = 42
+    [<Params(0.005, 0.01, 0.05, 0.1, 0.5)>]
+    member val Density = 0.0 with get, set
 
-    member private this.CreateVector size (generateValue: System.Random -> uint64 -> Option<float>) =
-        let rng = System.Random(rngSeed)
+    [<Params(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)>]
+    member val Seed = 0 with get, set
 
+    member val Vector = Unchecked.defaultof<Vector.SparseVector<double>> with get, set
+
+    member private this.GenerateVector(size: int, density: float, rng: Random) =
         let coords =
-            [ for i in 0UL .. size - 1UL do
-                  match generateValue rng i with
-                  | Some v -> (i * 1UL<Vector.index>, v)
-                  | None -> () ]
+            [ for i in 0 .. size - 1 do
+                  if rng.NextDouble() < density then
+                      let value = double (rng.Next(1, 4))
+                      yield (uint64 i * 1UL<Vector.index>, value) ]
 
-        match Vector.fromCoordinateList (Vector.CoordinateList(size * 1UL<Vector.dataLength>, coords)) with
+        match Vector.fromCoordinateList (Vector.CoordinateList(uint64 size * 1UL<Vector.dataLength>, coords)) with
         | Ok v -> v
-        | Error msg -> failwith $"Failed to create vector: {msg}"
-
-    member private this.CreateSparseVector size density =
-        let generateValue (rng: System.Random) _ =
-            if rng.NextDouble() < density then
-                Some(rng.NextDouble())
-            else
-                None
-
-        this.CreateVector size generateValue
-
-    member private this.CreateDenseVector size =
-        let generateValue _ _ = Some 1.0
-        this.CreateVector size generateValue
+        | Error msg -> failwithf "Failed to create vector: %s" msg
 
     [<GlobalSetup>]
     member this.Setup() =
-        let sizeSmall = 32UL
-        let sizeMedium = 256UL
-        let sizeLarge = 1024UL
-
-        sparseSmall <- this.CreateSparseVector sizeSmall 0.10
-        denseSmall <- this.CreateDenseVector sizeSmall
-        sparseMedium <- this.CreateSparseVector sizeMedium 0.05
-        denseMedium <- this.CreateDenseVector sizeMedium
-        sparseLarge <- this.CreateSparseVector sizeLarge 0.01
-        denseLarge <- this.CreateDenseVector sizeLarge
+        let rng = Random(this.Seed)
+        this.Vector <- this.GenerateVector(this.Size, this.Density, rng)
 
     member private this.SliceMiddle(v: Vector.SparseVector<double>) =
         let n = int v.length
@@ -61,22 +48,7 @@ type Benchmark() =
 
         match Vector.slice start last v with
         | Ok res -> res
-        | Error _ -> failwith "Slice failed"
+        | Error msg -> failwithf "Slice failed: %s" msg
 
     [<Benchmark>]
-    member this.Slice_SparseSmall() = this.SliceMiddle sparseSmall
-
-    [<Benchmark>]
-    member this.Slice_DenseSmall() = this.SliceMiddle denseSmall
-
-    [<Benchmark>]
-    member this.Slice_SparseMedium() = this.SliceMiddle sparseMedium
-
-    [<Benchmark>]
-    member this.Slice_DenseMedium() = this.SliceMiddle denseMedium
-
-    [<Benchmark>]
-    member this.Slice_SparseLarge() = this.SliceMiddle sparseLarge
-
-    [<Benchmark>]
-    member this.Slice_DenseLarge() = this.SliceMiddle denseLarge
+    member this.Slice() = this.SliceMiddle(this.Vector) |> ignore
