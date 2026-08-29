@@ -8,10 +8,10 @@ open QuadTree.Benchmarks.Utils
 [<MemoryDiagnoser>]
 type Benchmark() =
 
-    [<Params(100, 150)>]
+    [<Params(150, 200, 250, 300)>]
     member val SizeA = 0 with get, set
 
-    [<Params(100, 150, 200)>]
+    [<Params(150, 200, 250, 300)>]
     member val SizeB = 0 with get, set
 
     [<Params(0.005, 0.01, 0.05, 0.1)>]

@@ -15,6 +15,8 @@
     <Compile Include="VectorSlice.fs"/>
     <Compile Include="MatrixSlice.fs"/>
     <Compile Include="Kronecker.fs"/>
+    <Compile Include="MatrixSliceAlign.fs"/>
+    <Compile Include="VectorSliceAlign.fs"/>
     <Compile Include="Main.fs"/>
   </ItemGroup>
 

@@ -16,35 +16,35 @@ type Benchmark() =
         | None, Some a -> Some a
         | _ -> None
 
-    [<Params("g7jac010sc",
-             "g7jac020",
-             "g7jac020sc",
-             "g7jac040",
-             "g7jac040sc",
-             "g7jac050sc",
-             "g7jac060",
-             "g7jac060sc",
-             "g7jac080",
-             "g7jac100",
-             "g7jac100sc",
-             "g7jac120",
-             "g7jac120sc",
-             "g7jac140",
-             "g7jac140sc",
-             "g7jac160",
-             "jan99jac020",
-             "jan99jac020sc",
-             "mark3jac020",
-             "mark3jac020sc",
+    [<Params("bcsstk01",
+             "bcsstk02",
+             "bcsstk03",
+             "bcsstk04",
+             "bcsstk05",
+             "bcsstk06",
+             "bcsstk07",
+             "bcsstk08",
+             "bcsstk09",
+             "bcsstk10",
+             "bcsstk11",
+             "bcsstk12",
+             "bcsstk13",
+             "bcsstk14",
+             "bcsstk15",
+             "bcsstk16",
+             "bcsstk17",
+             "bcsstk18",
+             "bcsstk29",
+             "bcsstk30",
+             "bcsstk31",
+             "cavity01",
+             "cavity05",
+             "cavity10",
              "mesh2e1",
              "mesh3em5",
              "pwt",
              "shuttle_eddy",
              "tandem_vtx",
-             "bcsstk01",
-             "cavity01",
-             "cavity05",
-             "cavity10",
              "email-Eu-core")>]
     member val MatrixName = "" with get, set
 
@@ -88,7 +88,7 @@ type Benchmark() =
         let projectRoot = findProjectRoot __SOURCE_DIRECTORY__
 
         let path =
-            Path.Combine(projectRoot, "data", "Reduce_matrices", $"{this.MatrixName}.mtx")
+            Path.Combine(projectRoot, "data", this.MatrixName, $"{this.MatrixName}.mtx")
 
         if not (File.Exists path) then
             failwithf "Файл не найден: %s\nИщем в: %s" path projectRoot

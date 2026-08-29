@@ -604,80 +604,70 @@ let foldQuadtree folder state size tree =
     inner 0UL 0UL (uint64 size) tree state
 
 let reduceRows (op: 'a option -> 'a option -> 'a option) (matrix: SparseMatrix<'a>) : Vector.SparseVector<'a> =
-    let rows = matrix.nrows
+    let nRows = int matrix.nrows
+    let length = uint64 nRows * 1UL<Vector.dataLength>
 
-    let pairs =
-        foldQuadtree (fun acc row col v -> (row, v) :: acc) [] matrix.storage.size matrix.storage.data
+    let buckets = Array.init nRows (fun _ -> ResizeArray<'a>())
 
-    let grouped =
-        List.sortBy fst pairs
-        |> List.groupBy fst
-        |> List.map (fun (row, rowSet) -> row, rowSet |> List.map snd |> List.map Some)
-
-    let reduced =
-        grouped
-        |> List.map (fun (row, values) ->
-            match values with
-            | [] -> row, None
-            | head :: tail -> row, List.fold op head tail)
-
-    let data =
-        reduced
-        |> List.choose (fun (row, v) ->
-            match v with
-            | None -> None
-            | Some x -> Some(row, 0UL<colindex>, x))
-        |> List.sort
+    foldQuadtree
+        (fun _ row col v ->
+            let rowIdx = int row
+            buckets.[rowIdx].Add(v))
+        ()
+        matrix.storage.size
+        matrix.storage.data
 
     let vectorData =
-        data |> List.map (fun (row, _, v) -> (uint64 row * 1UL<Vector.index>, v))
+        buckets
+        |> Array.mapi (fun idx bucket ->
+            if bucket.Count = 0 then
+                None
+            else
+                let mutable acc = Some bucket.[0]
 
-    match Vector.fromCoordinateList (Vector.CoordinateList(uint64 rows * 1UL<Vector.dataLength>, vectorData)) with
+                for i in 1 .. bucket.Count - 1 do
+                    acc <- op acc (Some bucket.[i])
+
+                Some(uint64 idx * 1UL<Vector.index>, acc.Value))
+        |> Array.choose id
+        |> Array.toList
+
+    match Vector.fromCoordinateList (Vector.CoordinateList(length, vectorData)) with
     | Ok v -> v
-    | Error _ ->
-        Vector.SparseVector(
-            uint64 rows * 1UL<Vector.dataLength>,
-            0UL<nvals>,
-            Vector.Storage(1UL<storageSize>, Vector.Leaf Dummy)
-        )
+    | Error _ -> Vector.SparseVector(length, 0UL<nvals>, Vector.Storage(1UL<storageSize>, Vector.Leaf Dummy))
 
 let reduceCols (op: 'a option -> 'a option -> 'a option) (matrix: SparseMatrix<'a>) : Vector.SparseVector<'a> =
-    let cols = matrix.ncols
+    let nCols = int matrix.ncols
+    let length = uint64 nCols * 1UL<Vector.dataLength>
 
-    let pairs =
-        foldQuadtree (fun acc row col v -> (col, v) :: acc) [] matrix.storage.size matrix.storage.data
+    let buckets = Array.init nCols (fun _ -> ResizeArray<'a>())
 
-    let grouped =
-        List.sortBy fst pairs
-        |> List.groupBy fst
-        |> List.map (fun (col, colSet) -> col, colSet |> List.map snd |> List.map Some)
-
-    let reduced =
-        grouped
-        |> List.map (fun (col, values) ->
-            match values with
-            | [] -> col, None
-            | head :: tail -> col, List.fold op head tail)
-
-    let data =
-        reduced
-        |> List.choose (fun (col, v) ->
-            match v with
-            | None -> None
-            | Some x -> Some(0UL<rowindex>, col, x))
-        |> List.sort
+    foldQuadtree
+        (fun _ row col v ->
+            let colIdx = int col
+            buckets.[colIdx].Add(v))
+        ()
+        matrix.storage.size
+        matrix.storage.data
 
     let vectorData =
-        data |> List.map (fun (_, col, v) -> (uint64 col * 1UL<Vector.index>, v))
+        buckets
+        |> Array.mapi (fun idx bucket ->
+            if bucket.Count = 0 then
+                None
+            else
+                let mutable acc = Some bucket.[0]
 
-    match Vector.fromCoordinateList (Vector.CoordinateList(uint64 cols * 1UL<Vector.dataLength>, vectorData)) with
+                for i in 1 .. bucket.Count - 1 do
+                    acc <- op acc (Some bucket.[i])
+
+                Some(uint64 idx * 1UL<Vector.index>, acc.Value))
+        |> Array.choose id
+        |> Array.toList
+
+    match Vector.fromCoordinateList (Vector.CoordinateList(length, vectorData)) with
     | Ok v -> v
-    | Error _ ->
-        Vector.SparseVector(
-            uint64 cols * 1UL<Vector.dataLength>,
-            0UL<nvals>,
-            Vector.Storage(1UL<storageSize>, Vector.Leaf Dummy)
-        )
+    | Error _ -> Vector.SparseVector(length, 0UL<nvals>, Vector.Storage(1UL<storageSize>, Vector.Leaf Dummy))
 
 let kroneckerProduct
     (matrixA: SparseMatrix<'a>)
@@ -695,32 +685,28 @@ let kroneckerProduct
         getNearestUpperPowerOfTwo (max (uint64 resultRows) (uint64 resultCols))
         * 1UL<storageSize>
 
-    let collectNonZeroEntries
-        (tree: qtree<Option<'T>>)
-        (storageSize: uint64<storageSize>)
-        (maxRows: uint64)
-        (maxCols: uint64)
-        =
-        let entries = ResizeArray<struct (uint64 * uint64 * 'T)>()
+    let collectEntries (matrix: SparseMatrix<'T>) =
+        let result = ResizeArray<struct (uint64 * uint64 * 'T)>()
+        let maxRows = uint64 matrix.nrows
+        let maxCols = uint64 matrix.ncols
 
-        let rec traverse (row: uint64) (col: uint64) (size: uint64) (subtree: qtree<Option<'T>>) =
-            if row < maxRows && col < maxCols then
-                match subtree with
+        let rec traverse (row: uint64) (col: uint64) (size: uint64) (tree: qtree<Option<'T>>) =
+            if row >= maxRows || col >= maxCols then
+                ()
+            else
+                match tree with
                 | Leaf Dummy -> ()
                 | Leaf(UserValue None) -> ()
                 | Leaf(UserValue(Some value)) ->
                     if size = 1UL then
-                        entries.Add(struct (row, col, value))
+                        result.Add(struct (row, col, value))
                     else
-                        for dr in 0UL .. size - 1UL do
-                            let currentRow = row + dr
+                        let endRow = min (row + size) maxRows
+                        let endCol = min (col + size) maxCols
 
-                            if currentRow < maxRows then
-                                for dc in 0UL .. size - 1UL do
-                                    let currentCol = col + dc
-
-                                    if currentCol < maxCols then
-                                        entries.Add(struct (currentRow, currentCol, value))
+                        for r in row .. endRow - 1UL do
+                            for c in col .. endCol - 1UL do
+                                result.Add(struct (r, c, value))
                 | Node(nw, ne, sw, se) ->
                     let half = size / 2UL
                     traverse row col half nw
@@ -728,90 +714,87 @@ let kroneckerProduct
                     traverse (row + half) col half sw
                     traverse (row + half) (col + half) half se
 
-        traverse 0UL 0UL (uint64 storageSize) tree
-        entries.ToArray()
+        traverse 0UL 0UL (uint64 matrix.storage.size) matrix.storage.data
+        result.ToArray()
 
-    let entriesA =
-        collectNonZeroEntries matrixA.storage.data matrixA.storage.size (uint64 matrixA.nrows) (uint64 matrixA.ncols)
+    let entriesA = collectEntries matrixA
+    let entriesB = collectEntries matrixB
 
-    let entriesB =
-        collectNonZeroEntries matrixB.storage.data matrixB.storage.size rowsB colsB
+    let maxNNZ = entriesA.Length * entriesB.Length
+    let buffer = Array.zeroCreate<struct (uint64 * uint64 * 'c)> (maxNNZ)
+    let mutable actualCount = 0
 
-    let resultEntries =
-        Array.zeroCreate<struct (uint64 * uint64 * 'c)> (entriesA.Length * entriesB.Length)
-
-    let mutable filledCount = 0
-
-    for i = 0 to entriesA.Length - 1 do
+    for i in 0 .. entriesA.Length - 1 do
         let struct (rowA, colA, valueA) = entriesA.[i]
         let baseRow = rowA * rowsB
         let baseCol = colA * colsB
 
-        for j = 0 to entriesB.Length - 1 do
+        for j in 0 .. entriesB.Length - 1 do
             let struct (rowB, colB, valueB) = entriesB.[j]
 
             match combine valueA valueB with
-            | Some combinedValue ->
-                resultEntries.[filledCount] <- struct (baseRow + rowB, baseCol + colB, combinedValue)
-                filledCount <- filledCount + 1
+            | Some v ->
+                buffer.[actualCount] <- struct (baseRow + rowB, baseCol + colB, v)
+                actualCount <- actualCount + 1
             | None -> ()
 
-    let inline swap (i: int) (j: int) =
-        let tmp = resultEntries.[i]
-        resultEntries.[i] <- resultEntries.[j]
-        resultEntries.[j] <- tmp
-
-    let partitionByRow (left: int) (right: int) (bound: uint64) =
+    let partitionRow (array: struct (uint64 * uint64 * 'c)[]) (left: int) (right: int) (midRow: uint64) =
         let mutable i = left
 
-        for k = left to right - 1 do
-            let struct (row, _, _) = resultEntries.[k]
+        for j in left .. right - 1 do
+            let struct (r, _, _) = array.[j]
 
-            if row < bound then
-                swap i k
+            if r < midRow then
+                let tmp = array.[i]
+                array.[i] <- array.[j]
+                array.[j] <- tmp
                 i <- i + 1
 
         i
 
-    let partitionByCol (left: int) (right: int) (bound: uint64) =
+    let partitionCol (array: struct (uint64 * uint64 * 'c)[]) (left: int) (right: int) (midCol: uint64) =
         let mutable i = left
 
-        for k = left to right - 1 do
-            let struct (_, col, _) = resultEntries.[k]
+        for j in left .. right - 1 do
+            let struct (_, c, _) = array.[j]
 
-            if col < bound then
-                swap i k
+            if c < midCol then
+                let tmp = array.[i]
+                array.[i] <- array.[j]
+                array.[j] <- tmp
                 i <- i + 1
 
         i
 
-    let rec buildTree (row: uint64) (col: uint64) (size: uint64) (left: int) (right: int) =
-        if left = right then
-            Leaf Dummy, 0UL<nvals>
+    let rec buildTree
+        (array: struct (uint64 * uint64 * 'c)[])
+        (left: int)
+        (right: int)
+        (row: uint64)
+        (col: uint64)
+        (size: uint64)
+        : qtree<Option<'c>> =
+        if left >= right then
+            Leaf Dummy
         elif size = 1UL then
-            let struct (_, _, value) = resultEntries.[left]
-            Leaf(UserValue(Some value)), 1UL<nvals>
+            let struct (_, _, value) = array.[left]
+            Leaf(UserValue(Some value))
         else
             let half = size / 2UL
             let midRow = row + half
             let midCol = col + half
 
-            let southStart = partitionByRow left right midRow
-            let northWestEnd = partitionByCol left southStart midCol
-            let southEastStart = partitionByCol southStart right midCol
+            let topEnd = partitionRow array left right midRow
+            let nwEnd = partitionCol array left topEnd midCol
+            let swEnd = partitionCol array topEnd right midCol
 
-            let treeNW, nvalsNW = buildTree row col half left northWestEnd
-            let treeNE, nvalsNE = buildTree row midCol half northWestEnd southStart
-            let treeSW, nvalsSW = buildTree midRow col half southStart southEastStart
-            let treeSE, nvalsSE = buildTree midRow midCol half southEastStart right
+            let nwTree = buildTree array left nwEnd row col half
+            let neTree = buildTree array nwEnd topEnd row midCol half
+            let swTree = buildTree array topEnd swEnd midRow col half
+            let seTree = buildTree array swEnd right midRow midCol half
 
-            let totalNvals = nvalsNW + nvalsNE + nvalsSW + nvalsSE
+            mkNode nwTree neTree swTree seTree
 
-            if totalNvals = 0UL<nvals> then
-                Leaf Dummy, 0UL<nvals>
-            else
-                mkNode treeNW treeNE treeSW treeSE, totalNvals
-
-    let finalTree, finalNvals = buildTree 0UL 0UL (uint64 storageSize) 0 filledCount
-
+    let finalTree = buildTree buffer 0 actualCount 0UL 0UL (uint64 storageSize)
+    let finalNvals = uint64 actualCount * 1UL<nvals>
     Ok(SparseMatrix(resultRows, resultCols, finalNvals, Storage(storageSize, finalTree)))
