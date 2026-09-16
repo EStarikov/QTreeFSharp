@@ -1,8 +1,8 @@
 module RedBlackSet.Tests
 
 open System
-open RBSet.RBSet
-open RBSet
+open QuadTree.RBSet.RBSet
+open QuadTree.RBSet
 open Xunit
 
 let rec blHeightInv tree =

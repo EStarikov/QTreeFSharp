@@ -1,5 +1,5 @@
 //The following sources were used as a reference: 'Faster, Simpler Red-Black Trees' and Data/Set/RBTree.hs.
-namespace RBSet
+namespace QuadTree.RBSet
 
 open Result
 
@@ -9,9 +9,9 @@ type Color =
     | Red
     | Black
 
-type Tree<'T> =
+type RBSet<'T> =
     | Empty
-    | Node of color: Color * left: Tree<'T> * value: 'T * right: Tree<'T>
+    | Node of color: Color * left: RBSet<'T> * value: 'T * right: RBSet<'T>
 
 module private Tree =
     type private Condition<'T> =
@@ -28,11 +28,11 @@ module private Tree =
         | Done t
         | ToDo t -> t
 
-    let rec private blackHeight tree =
+    let rec private getBlackHeight tree =
         match tree with
         | Empty -> 0
-        | Node(Red, l, _, _) -> blackHeight l
-        | Node(Black, l, _, _) -> 1 + (blackHeight l)
+        | Node(Red, l, _, _) -> getBlackHeight l
+        | Node(Black, l, _, _) -> 1 + (getBlackHeight l)
 
 
     let rec contains tree v =
@@ -202,8 +202,8 @@ module private Tree =
                     | _ -> return! Error EmptyNodeWasNotExpected
             }
 
-        let h1 = blackHeight t1
-        let h2 = blackHeight t2
+        let h1 = getBlackHeight t1
+        let h2 = getBlackHeight t2
 
         resultM {
             if h1 = 0 then
@@ -232,8 +232,8 @@ module private Tree =
             resultM {
                 let! m = minimum (Ok t2)
                 let! t2' = delete t2 m
-                let h2' = blackHeight t2'
-                let h1 = blackHeight t1
+                let h2' = getBlackHeight t2'
+                let h1 = getBlackHeight t1
 
                 if h1 = h2' then
                     return Node(Red, t1, m, t2')
@@ -276,8 +276,8 @@ module private Tree =
                     | _ -> return! Error EmptyNodeWasNotExpected
             }
 
-        let h1 = blackHeight t1
-        let h2 = blackHeight t2
+        let h1 = getBlackHeight t1
+        let h2 = getBlackHeight t2
 
         resultM {
             if h1 = 0 then

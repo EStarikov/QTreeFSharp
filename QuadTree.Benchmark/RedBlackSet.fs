@@ -2,7 +2,7 @@ namespace QuadTree.Benchmarks.RedBlackSet
 
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Configs
-open QuadTree.RBSet 
+open QuadTree.RBSet
 open System.Collections.Generic
 
 [<GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)>]
@@ -20,7 +20,7 @@ type SingleOpsBenchmark() =
     val mutable public rndInt: int
 
     [<DefaultValue>]
-    val mutable public setA: RedBlackSet<int>
+    val mutable public setA: RBSet<int>
 
     [<GlobalSetup>]
     member self.Setup() =
@@ -31,20 +31,19 @@ type SingleOpsBenchmark() =
         self.setA <-
             dataA
             |> Array.fold
-                (fun (set: RedBlackSet<int>) v ->
-                    match RedBlackSet.add v set with
+                (fun (set: RBSet<int>) v ->
+                    match RBSet.add v set with
                     | Ok nextSet -> nextSet
                     | Error err -> failwithf "Benchmark setup failed: %A" err)
-                RedBlackSet.empty
+                RBSet.empty
 
     [<Benchmark>]
     [<BenchmarkCategory("Adding")>]
-    member self.AddingOneElement() = RedBlackSet.add self.rndInt self.setA
+    member self.AddingOneElement() = RBSet.add self.rndInt self.setA
 
     [<Benchmark>]
     [<BenchmarkCategory("Deleting")>]
-    member self.DeletingOneElement() =
-        RedBlackSet.delete self.rndInt self.setA
+    member self.DeletingOneElement() = RBSet.delete self.rndInt self.setA
 
 
 [<GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)>]
@@ -63,10 +62,10 @@ type FSSetsBenchmark() =
     val mutable public B: int
 
     [<DefaultValue>]
-    val mutable public RedBlackSetA: RedBlackSet<int>
+    val mutable public RedBlackSetA: RBSet<int>
 
     [<DefaultValue>]
-    val mutable public RedBlackSetB: RedBlackSet<int>
+    val mutable public RedBlackSetB: RBSet<int>
 
     [<DefaultValue>]
     val mutable public SetA: Set<int>
@@ -90,19 +89,19 @@ type FSSetsBenchmark() =
             dataA
             |> Array.fold
                 (fun set v ->
-                    match RedBlackSet.add v set with
+                    match RBSet.add v set with
                     | Ok s -> s
                     | Error e -> failwithf "%A" e)
-                RedBlackSet.empty
+                RBSet.empty
 
         self.RedBlackSetB <-
             dataB
             |> Array.fold
                 (fun set v ->
-                    match RedBlackSet.add v set with
+                    match RBSet.add v set with
                     | Ok s -> s
                     | Error e -> failwithf "%A" e)
-                RedBlackSet.empty
+                RBSet.empty
 
         self.SetA <- dataA |> Array.fold (fun set v -> Set.add v set) Set.empty
 
@@ -117,7 +116,7 @@ type FSSetsBenchmark() =
     [<Benchmark(Baseline = true)>]
     [<BenchmarkCategory("Union")>]
     member self.UnionRB() =
-        RedBlackSet.union self.RedBlackSetA self.RedBlackSetB
+        RBSet.union self.RedBlackSetA self.RedBlackSetB
 
     [<Benchmark>]
     [<BenchmarkCategory("Union")>]
@@ -132,7 +131,7 @@ type FSSetsBenchmark() =
     [<Benchmark(Baseline = true)>]
     [<BenchmarkCategory("Intersection")>]
     member self.IntersectionRB() =
-        RedBlackSet.intersection self.RedBlackSetA self.RedBlackSetB
+        RBSet.intersection self.RedBlackSetA self.RedBlackSetB
 
     [<Benchmark>]
     [<BenchmarkCategory("Intersection")>]
@@ -147,7 +146,7 @@ type FSSetsBenchmark() =
     [<Benchmark(Baseline = true)>]
     [<BenchmarkCategory("Difference")>]
     member self.DifferenceRB() =
-        RedBlackSet.difference self.RedBlackSetA self.RedBlackSetB
+        RBSet.difference self.RedBlackSetA self.RedBlackSetB
 
     [<Benchmark>]
     [<BenchmarkCategory("Difference")>]
