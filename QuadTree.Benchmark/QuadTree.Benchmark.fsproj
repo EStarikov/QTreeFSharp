@@ -11,6 +11,7 @@
     <Compile Include="BFS.fs"/>
     <Compile Include="SSSP.fs"/>
     <Compile Include="Triangles.fs"/>
+    <Compile Include="RedBlackSet.fs"/>
     <Compile Include="Main.fs"/>
   </ItemGroup>
 
