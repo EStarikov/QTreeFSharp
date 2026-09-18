@@ -39,7 +39,7 @@ type SingleOpsBenchmark() =
 
     [<Benchmark>]
     [<BenchmarkCategory("Adding")>]
-    member self.AddingOneElement() : Result<RBSet<int>, RBSetError>  = RBSet.add self.rndInt self.setA
+    member self.AddingOneElement() : Result<RBSet<int>, RBSetError> = RBSet.add self.rndInt self.setA
 
     [<Benchmark>]
     [<BenchmarkCategory("Deleting")>]
