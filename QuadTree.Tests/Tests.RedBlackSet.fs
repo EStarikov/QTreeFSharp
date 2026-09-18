@@ -198,7 +198,7 @@ let emptySetProperties () =
 [<Fact>]
 let largeSetInsertion () =
     let rng = Random()
-    let randomValues = [ for _ in 1..1000 -> rng.Next(-10000, 10000) ]
+    let randomValues = [ for _ in 1..1000 -> rng.Next(-5000, 5000) ]
 
     let treeResult =
         randomValues |> List.fold (fun acc x -> acc |> Result.bind (add x)) (Ok empty)
@@ -241,3 +241,222 @@ let complexRedBlackViolations () =
         Assert.NotEqual(-1, blHeightInv tree)
         Assert.True(blackSonsOfRed tree)
     | Error err -> Assert.True(false, sprintf "Error in insert: %A" err)
+
+[<Fact>]
+let randomDeletions () =
+    let rng = Random()
+    let insertValues = [ for _ in 1..500 -> rng.Next(-5000, 5000) ]
+    let uniqueInserts = insertValues |> List.distinct
+
+    let treeResult =
+        insertValues |> List.fold (fun acc x -> acc |> Result.bind (add x)) (Ok empty)
+
+    match treeResult with
+    | Ok tree ->
+        let deleteValues = uniqueInserts |> List.filter (fun _ -> rng.Next(0, 2) = 0)
+
+        let remaining = uniqueInserts |> List.except deleteValues
+
+        let afterDelete =
+            deleteValues |> List.fold (fun acc x -> acc |> Result.bind (delete x)) (Ok tree)
+
+        match afterDelete with
+        | Ok t ->
+            Assert.NotEqual(-1, blHeightInv t)
+            Assert.NotEqual(-1, heightInv t)
+            Assert.True(blackSonsOfRed t)
+
+            for x in deleteValues do
+                Assert.False(contains x t, sprintf "Element %d should be deleted" x)
+
+            for x in remaining do
+                Assert.True(contains x t, sprintf "Element %d should be present" x)
+
+            Assert.Equal(remaining.Length, numOfElements t 0)
+        | Error err -> Assert.True(false, sprintf "Error in delete: %A" err)
+    | Error err -> Assert.True(false, sprintf "Error in insert: %A" err)
+
+[<Fact>]
+let randomDeletionsOfMissingElements () =
+    let rng = Random()
+    let insertValues = [ for _ in 1..300 -> rng.Next(-3000, 3000) ]
+    let deleteMissing = [ for _ in 1..300 -> rng.Next(10000, 20000) ]
+
+    let treeResult =
+        insertValues |> List.fold (fun acc x -> acc |> Result.bind (add x)) (Ok empty)
+
+    match treeResult with
+    | Ok tree ->
+        let afterDelete =
+            deleteMissing
+            |> List.fold (fun acc x -> acc |> Result.bind (delete x)) (Ok tree)
+
+        match afterDelete with
+        | Ok t ->
+            Assert.NotEqual(-1, blHeightInv t)
+            Assert.NotEqual(-1, heightInv t)
+            Assert.True(blackSonsOfRed t)
+
+            let expected = insertValues |> List.distinct
+
+            for x in expected do
+                Assert.True(contains x t, sprintf "Element %d should still be present" x)
+
+            for x in deleteMissing do
+                Assert.False(contains x t, sprintf "Element %d should not be present" x)
+
+            Assert.Equal(expected.Length, numOfElements t 0)
+        | Error err -> Assert.True(false, sprintf "Error in delete: %A" err)
+    | Error err -> Assert.True(false, sprintf "Error in insert: %A" err)
+
+[<Fact>]
+let randomUnion () =
+    let rng = Random()
+    let vals1 = [ for _ in 1..300 -> rng.Next(-3000, 3000) ]
+    let vals2 = [ for _ in 1..300 -> rng.Next(-3000, 3000) ]
+
+    let t1Result =
+        vals1 |> List.fold (fun acc x -> acc |> Result.bind (add x)) (Ok empty)
+
+    let t2Result =
+        vals2 |> List.fold (fun acc x -> acc |> Result.bind (add x)) (Ok empty)
+
+    match t1Result, t2Result with
+    | Ok t1, Ok t2 ->
+        match union t1 t2 with
+        | Ok tU ->
+            Assert.NotEqual(-1, blHeightInv tU)
+            Assert.NotEqual(-1, heightInv tU)
+            Assert.True(blackSonsOfRed tU)
+
+            let expected = (vals1 @ vals2) |> List.distinct
+
+            for x in expected do
+                Assert.True(contains x tU, sprintf "Element %d should be in union" x)
+
+            Assert.Equal(expected.Length, numOfElements tU 0)
+        | Error e -> Assert.True(false, sprintf "Error in union: %A" e)
+    | _ -> Assert.True(false, "Error in insert")
+
+[<Fact>]
+let randomIntersection () =
+    let rng = Random()
+    let vals1 = [ for _ in 1..300 -> rng.Next(-3000, 3000) ]
+    let vals2 = [ for _ in 1..300 -> rng.Next(-3000, 3000) ]
+
+    let t1Result =
+        vals1 |> List.fold (fun acc x -> acc |> Result.bind (add x)) (Ok empty)
+
+    let t2Result =
+        vals2 |> List.fold (fun acc x -> acc |> Result.bind (add x)) (Ok empty)
+
+    match t1Result, t2Result with
+    | Ok t1, Ok t2 ->
+        match intersection t1 t2 with
+        | Ok tI ->
+            Assert.NotEqual(-1, blHeightInv tI)
+            Assert.NotEqual(-1, heightInv tI)
+            Assert.True(blackSonsOfRed tI)
+
+            let set1 = vals1 |> Set.ofList
+            let set2 = vals2 |> Set.ofList
+            let expected = Set.intersect set1 set2
+            let allVals = Set.union set1 set2
+            let notExpected = Set.difference allVals expected
+
+            for x in expected do
+                Assert.True(contains x tI, sprintf "Element %d should be in intersection" x)
+
+            for x in notExpected do
+                Assert.False(contains x tI, sprintf "Element %d should not be in intersection" x)
+
+            Assert.Equal(expected.Count, numOfElements tI 0)
+        | Error e -> Assert.True(false, sprintf "Error in intersection: %A" e)
+    | _ -> Assert.True(false, "Error in insert")
+
+[<Fact>]
+let randomDifference () =
+    let rng = Random()
+    let vals1 = [ for _ in 1..300 -> rng.Next(-3000, 3000) ]
+    let vals2 = [ for _ in 1..300 -> rng.Next(-3000, 3000) ]
+
+    let t1Result =
+        vals1 |> List.fold (fun acc x -> acc |> Result.bind (add x)) (Ok empty)
+
+    let t2Result =
+        vals2 |> List.fold (fun acc x -> acc |> Result.bind (add x)) (Ok empty)
+
+    match t1Result, t2Result with
+    | Ok t1, Ok t2 ->
+        match difference t1 t2 with
+        | Ok tD ->
+            Assert.NotEqual(-1, blHeightInv tD)
+            Assert.NotEqual(-1, heightInv tD)
+            Assert.True(blackSonsOfRed tD)
+
+            let set1 = vals1 |> Set.ofList
+            let set2 = vals2 |> Set.ofList
+            let expected = Set.difference set1 set2
+
+            for x in expected do
+                Assert.True(contains x tD, sprintf "Element %d should be in difference" x)
+
+            for x in set2 do
+                Assert.False(contains x tD, sprintf "Element %d should not be in difference" x)
+
+            Assert.Equal(expected.Count, numOfElements tD 0)
+        | Error e -> Assert.True(false, sprintf "Error in difference: %A" e)
+    | _ -> Assert.True(false, "Error in insert")
+
+[<Fact>]
+let randomMixedOperations () =
+    let rng = Random()
+
+    let buildRandomSet size =
+        let values = [ for _ in 1..size -> rng.Next(-5000, 5000) ]
+
+        values
+        |> List.fold (fun acc x -> acc |> Result.bind (add x)) (Ok empty)
+        |> function
+            | Ok t -> t
+            | Error e -> failwithf "Insert failed: %A" e
+
+    let t1 = buildRandomSet 400
+    let t2 = buildRandomSet 400
+
+    let combined =
+        match union t1 t2 with
+        | Ok u -> u
+        | Error e -> failwithf "Union failed: %A" e
+
+    let combinedList =
+        let rec toList tree acc =
+            match tree with
+            | Empty -> acc
+            | Node(_, l, v, r) -> toList l (v :: toList r acc)
+
+        toList combined []
+
+    let toDelete = combinedList |> List.filter (fun _ -> rng.Next(0, 2) = 0)
+
+    let afterDelete =
+        toDelete |> List.fold (fun acc x -> acc |> Result.bind (delete x)) (Ok combined)
+
+    match afterDelete with
+    | Ok final ->
+        Assert.NotEqual(-1, blHeightInv final)
+        Assert.NotEqual(-1, heightInv final)
+        Assert.True(blackSonsOfRed t1)
+        Assert.True(blackSonsOfRed t2)
+        Assert.True(blackSonsOfRed final)
+
+        for x in toDelete do
+            Assert.False(contains x final, sprintf "Deleted element %d found" x)
+
+        let expectedRemaining = combinedList |> List.except toDelete
+
+        for x in expectedRemaining do
+            Assert.True(contains x final, sprintf "Element %d should be present" x)
+
+        Assert.Equal(expectedRemaining.Length, numOfElements final 0)
+    | Error e -> Assert.True(false, sprintf "Error in mixed ops: %A" e)
