@@ -81,7 +81,7 @@ type Benchmark() =
                 let parent = Directory.GetParent(dir)
 
                 if parent = null then
-                    failwith "Не найден корень проекта (папка data)"
+                    failwith "Project root not found (data directory is missing)"
                 else
                     findProjectRoot parent.FullName
 
@@ -91,7 +91,7 @@ type Benchmark() =
             Path.Combine(projectRoot, "data", this.MatrixName, $"{this.MatrixName}.mtx")
 
         if not (File.Exists path) then
-            failwithf "Файл не найден: %s\nИщем в: %s" path projectRoot
+            failwithf "File not found: %s\nSearched in: %s" path projectRoot
 
         match QuadTree.Benchmarks.Utils.readMtx path false with
         | Ok m ->
@@ -99,7 +99,7 @@ type Benchmark() =
             this.Size <- int m.nrows
             this.Density <- float m.nvals / (float m.nrows * float m.ncols)
             this.IsSymmetric <- this.CheckSymmetric(m)
-        | Error msg -> failwithf "Не удалось загрузить %s: %s" this.MatrixName msg
+        | Error msg -> failwithf "Failed to load %s: %s" this.MatrixName msg
 
     [<Benchmark>]
     member this.ReduceCols_Original() = Matrix.reduceCols add this.Matrix

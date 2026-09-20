@@ -1366,7 +1366,7 @@ let ``slice middle of dense matrix returns correct values`` () =
             Assert.Equal(1024UL<nvals>, sliced.nvals)
 
 [<Fact>]
-let ``let reduceRows sum on square power of two matrix`` () =
+let ``reduceRows sum on square power of two matrix`` () =
     let coo =
         CoordinateList(
             2UL<nrows>,
@@ -1397,7 +1397,7 @@ let ``let reduceRows sum on square power of two matrix`` () =
         Assert.Equal(expected, vectorCoordinates)
 
 [<Fact>]
-let ``let reduceRows sum on square power of two matrix with empty row`` () =
+let ``reduceRows sum on square power of two matrix with empty row`` () =
     let coo =
         CoordinateList(
             2UL<nrows>,
@@ -1423,7 +1423,7 @@ let ``let reduceRows sum on square power of two matrix with empty row`` () =
     | Result.Error msg -> Assert.Fail(msg)
 
 [<Fact>]
-let ``let reduceRows sum on square not power of two matrix`` () =
+let ``reduceRows sum on square not power of two matrix`` () =
     let coo =
         CoordinateList(
             3UL<nrows>,
@@ -1458,7 +1458,7 @@ let ``let reduceRows sum on square not power of two matrix`` () =
     | Result.Error msg -> Assert.Fail(msg)
 
 [<Fact>]
-let ``let reduceRows mul on square not power of two matrix`` () =
+let ``reduceRows mul on square not power of two matrix`` () =
     let coo =
         CoordinateList(
             3UL<nrows>,
@@ -1493,7 +1493,7 @@ let ``let reduceRows mul on square not power of two matrix`` () =
     | Result.Error msg -> Assert.Fail(msg)
 
 [<Fact>]
-let ``let reduceRows sum on rectangular matrix`` () =
+let ``reduceRows sum on rectangular matrix`` () =
     let coo =
         CoordinateList(
             2UL<nrows>,
@@ -1523,7 +1523,7 @@ let ``let reduceRows sum on rectangular matrix`` () =
     | Result.Error msg -> Assert.Fail(msg)
 
 [<Fact>]
-let ``let reduceRows sum on empty matrix`` () =
+let ``reduceRows sum on empty matrix`` () =
     match Matrix.fromCoordinateList (CoordinateList(2UL<nrows>, 3UL<ncols>, [])) with
     | Result.Ok m ->
         let sum x y =
@@ -1538,7 +1538,7 @@ let ``let reduceRows sum on empty matrix`` () =
     | Result.Error msg -> Assert.Fail(msg)
 
 [<Fact>]
-let ``let reduceRows mul on single matrix`` () =
+let ``reduceRows mul on single matrix`` () =
     match
         Matrix.fromCoordinateList (CoordinateList(1UL<nrows>, 1UL<ncols>, [ (0UL<rowindex>, 0UL<colindex>, 33) ]))
     with
@@ -1559,7 +1559,7 @@ let ``let reduceRows mul on single matrix`` () =
     | Result.Error msg -> Assert.Fail(msg)
 
 [<Fact>]
-let ``let reduceCols sum on square power of two matrix`` () =
+let ``reduceCols sum on square power of two matrix`` () =
     let coo =
         CoordinateList(
             2UL<nrows>,
@@ -1588,7 +1588,7 @@ let ``let reduceCols sum on square power of two matrix`` () =
     | Result.Error msg -> Assert.Fail(msg)
 
 [<Fact>]
-let ``let reduceCols sum on square power of two matrix with empty col`` () =
+let ``reduceCols sum on square power of two matrix with empty col`` () =
     let coo =
         CoordinateList(
             2UL<nrows>,
@@ -1614,7 +1614,7 @@ let ``let reduceCols sum on square power of two matrix with empty col`` () =
     | Result.Error msg -> Assert.Fail(msg)
 
 [<Fact>]
-let ``let reduceCols sum on square not power of two matrix`` () =
+let ``reduceCols sum on square not power of two matrix`` () =
     let coo =
         CoordinateList(
             3UL<nrows>,
@@ -1649,7 +1649,7 @@ let ``let reduceCols sum on square not power of two matrix`` () =
     | Result.Error msg -> Assert.Fail(msg)
 
 [<Fact>]
-let ``let reduceCols mul on square not power of two matrix`` () =
+let ``reduceCols mul on square not power of two matrix`` () =
     let coo =
         CoordinateList(
             3UL<nrows>,
@@ -1684,7 +1684,7 @@ let ``let reduceCols mul on square not power of two matrix`` () =
     | Result.Error msg -> Assert.Fail(msg)
 
 [<Fact>]
-let ``let reduceCols sum on rectangular matrix`` () =
+let ``reduceCols sum on rectangular matrix`` () =
     let coo =
         CoordinateList(
             2UL<nrows>,
@@ -1717,7 +1717,7 @@ let ``let reduceCols sum on rectangular matrix`` () =
     | Result.Error msg -> Assert.Fail(msg)
 
 [<Fact>]
-let ``let reduceCols sum on empty matrix`` () =
+let ``reduceCols sum on empty matrix`` () =
     match Matrix.fromCoordinateList (CoordinateList(2UL<nrows>, 3UL<ncols>, [])) with
     | Result.Ok m ->
         let sum x y =
@@ -1732,7 +1732,7 @@ let ``let reduceCols sum on empty matrix`` () =
     | Result.Error msg -> Assert.Fail(msg)
 
 [<Fact>]
-let ``let reduceCols mul on single matrix`` () =
+let ``reduceCols mul on single matrix`` () =
     match
         Matrix.fromCoordinateList (CoordinateList(1UL<nrows>, 1UL<ncols>, [ (0UL<rowindex>, 0UL<colindex>, 33) ]))
     with
