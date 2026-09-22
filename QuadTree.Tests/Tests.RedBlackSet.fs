@@ -1,6 +1,7 @@
 module RedBlackSet.Tests
 
 open System
+open QuadTree.RBSet.Tree
 open QuadTree.RBSet.RBSet
 open QuadTree.RBSet
 open Xunit
@@ -26,9 +27,9 @@ let rec heightInv tree =
         if lH = -1 || rH = -1 || (float (rH + 1) / float (lH + 1) > 2) then
             -1
         else if lH > rH then
-            lH
+            lH + 1
         else
-            rH
+            rH + 1
 
 let rec blackSonsOfRed tree =
     match tree with

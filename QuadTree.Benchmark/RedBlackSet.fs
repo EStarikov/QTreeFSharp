@@ -2,6 +2,7 @@ namespace QuadTree.Benchmarks.RedBlackSet
 
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Configs
+open QuadTree.RBSet.RBSet
 open QuadTree.RBSet
 open System.Collections.Generic
 
