@@ -5,32 +5,29 @@ open Result
 
 type RBSetError = EmptyNodeWasNotExpected
 
-type Color =
+module Tree =
+    type Color =
     | Red
     | Black
 
-type RBSet<'T> =
-    | Empty
-    | Node of color: Color * left: RBSet<'T> * value: 'T * right: RBSet<'T>
+    type Tree<'T> =
+        | Empty
+        | Node of color: Color * left: Tree<'T> * value: 'T * right: Tree<'T>
 
-module private Tree =
     type private Condition<'T> =
         | Done of 'T
         | ToDo of 'T
-
-    // Для delete: возвращает ToDo для signal о уменьшении высоты
-    let private blacken tree =
-        match tree with
-        | Node(Red, a, x, b) -> Done(Node(Black, a, x, b))
-        | _ -> ToDo tree
-
 
     let private justTree resultTree =
         match resultTree with
         | Done t
         | ToDo t -> t
 
-    // Фактическая чёрная высота (только чёрные узлы)
+    let blackenRoot tree =
+        match tree with
+        | Node(Red, a, x, b) -> Node(Black, a, x, b)
+        | _ -> tree
+
     let rec private getBlackHeight tree =
         match tree with
         | Empty -> 0
@@ -55,12 +52,6 @@ module private Tree =
         | Node(Black, a, x, b) as n -> Done(n)
         | _ -> ToDo(tree)
 
-
-    let blackenRoot tree =
-        match tree with
-        | Node(_, l, x, r) -> Node(Black, l, x, r)
-        | Empty -> Empty
-
     let insert tree v =
         let rec insertRec tree v =
             match tree with
@@ -82,9 +73,14 @@ module private Tree =
                     Done(tree)
 
         let newTree = insertRec tree v
-        newTree |> justTree |> blacken |> justTree |> Ok
+        newTree |> justTree |> blackenRoot |> Ok
 
     let delete tree v =
+        let blacken tree =
+            match tree with
+            | Node(Red, a, x, b) -> Done(Node(Black, a, x, b))
+            | _ -> ToDo tree
+
         let balanceDel tree =
             match tree with
             | Node(color, Node(Red, Node(Red, a, x, b), y, c), z, d)
@@ -173,7 +169,7 @@ module private Tree =
 
         resultM {
             let! t = deleteRec tree v
-            return t |> justTree |> blacken |> justTree
+            return t |> justTree |> blackenRoot
         }
 
     let join t1 g t2 =
@@ -226,81 +222,22 @@ module private Tree =
         }
 
     let merge t1 t2 =
-        let rec minimum tree =
-            match tree with
-            | Ok(Node(_, Empty, x, _)) -> Ok x
-            | Ok(Node(_, l, _, _)) -> minimum (Ok l)
-            | _ -> Error EmptyNodeWasNotExpected
-
-        let mergeEQ t1 t2 =
-            resultM {
-                let! m = minimum (Ok t2)
-                let! t2' = delete t2 m
-                let h2' = getBlackHeight t2'
-                let h1 = getBlackHeight t1
-
-                if h1 = h2' then
-                    return Node(Red, t1, m, t2')
-                else
-                    match t1 with
-                    | Node(_, Node(Red, ll, lx, lr), x, r) ->
-                        return Node(Red, Node(Black, ll, lx, lr), x, Node(Black, r, m, t2'))
-                    | Node(_, l, x, Node(Red, rl, rx, rr)) ->
-                        return Node(Black, Node(Red, l, x, rl), rx, Node(Red, rr, m, t2'))
-                    | Node(_, l, x, r) -> return Node(Black, Node(Red, l, x, r), m, t2')
-                    | _ -> return! Error EmptyNodeWasNotExpected
-            }
-
-        let rec mergeLT t1 t2 targetHeight currentHeight =
-            resultM {
-                if targetHeight = currentHeight then
-                    return! mergeEQ t1 t2
-                else
-                    match t2 with
-                    | Node(Red, l, x, r) ->
-                        let! newLeft = mergeLT t1 l targetHeight currentHeight
-                        return Node(Red, newLeft, x, r) |> balance |> justTree
-                    | Node(Black, l, x, r) ->
-                        let! newLeft = mergeLT t1 l targetHeight (currentHeight - 1)
-                        return Node(Black, newLeft, x, r) |> balance |> justTree
-                    | _ -> return! Error EmptyNodeWasNotExpected
-            }
-
-        let rec mergeRT t1 t2 targetHeight currentHeight =
-            resultM {
-                if targetHeight = currentHeight then
-                    return! mergeEQ t1 t2
-                else
-                    match t1 with
-                    | Node(Red, l, x, r) ->
-                        let! newRight = mergeRT r t2 targetHeight currentHeight
-                        return Node(Red, l, x, newRight) |> balance |> justTree
-                    | Node(Black, l, x, r) ->
-                        let! newRight = mergeRT r t2 targetHeight (currentHeight - 1)
-                        return Node(Black, l, x, newRight) |> balance |> justTree
-                    | _ -> return! Error EmptyNodeWasNotExpected
-            }
-
-        let h1 = getBlackHeight t1
-        let h2 = getBlackHeight t2
-
         resultM {
-            if h1 = 0 then
-                return t2
-            else if h2 = 0 then
-                return t1
-            else if h1 < h2 then
-                let! t = mergeLT t1 t2 h1 h2
-                return blackenRoot t
-            else if h1 > h2 then
-                let! t = mergeRT t1 t2 h2 h1
-                return blackenRoot t
-            else
-                let! t = mergeEQ t1 t2
-                return blackenRoot t
+            match t1, t2 with
+            | Empty, t -> return t
+            | t, Empty -> return t
+            | _, _ ->
+                let rec extractMin tree =
+                    match tree with
+                    | Node(_, Empty, x, _) -> x
+                    | Node(_, l, _, _) -> extractMin l
+                    | Empty -> failwith "extractMin: empty tree"
+
+                let minVal = extractMin t2
+                let! t2Rest = delete t2 minVal
+                return! join (blackenRoot t1) minVal (blackenRoot t2Rest)
         }
 
-    // БЕЗ blacken - передаём поддеревья как есть
     let rec split kx tree =
         resultM {
             match tree with
@@ -308,19 +245,20 @@ module private Tree =
             | Node(_, l, x, r) ->
                 if kx < x then
                     let! lt, gt = split kx l
-                    let! t = join gt x (justTree (blacken r))
+                    let! t = join gt x (blackenRoot r)
                     return lt, t
                 else if kx > x then
                     let! lt, gt = split kx r
-                    let! t = join (justTree (blacken l)) x lt
+                    let! t = join (blackenRoot l) x lt
                     return t, gt
                 else
-                    return justTree (blacken l), justTree (blacken r)
+                    return blackenRoot l, blackenRoot r
         }
 
 module RBSet =
     open Tree
 
+    type RBSet<'T> = Tree<'T> 
     let empty = Empty
 
     let add value set = Tree.insert set value
@@ -332,15 +270,15 @@ module RBSet =
     let rec union set1 set2 =
         resultM {
             match set1 with
-            | Empty -> return Tree.blackenRoot set2
+            | Empty -> return blackenRoot set2
             | _ ->
                 match set2 with
-                | Empty -> return Tree.blackenRoot set1
+                | Empty -> return blackenRoot set1
                 | Node(_, l, x, r) ->
-                    let! l', r' = Tree.split x set1
+                    let! l', r' = split x set1
                     let! tl = union l' l
                     let! tr = union r' r
-                    return! Tree.join tl x tr
+                    return! join (blackenRoot tl) x (blackenRoot tr)
         }
 
     let rec intersection set1 set2 =
@@ -351,14 +289,14 @@ module RBSet =
                 match set2 with
                 | Empty -> return Empty
                 | Node(_, l, x, r) ->
-                    let! l', r' = Tree.split x set1
+                    let! l', r' = split x set1
                     let! tl = intersection l' l
                     let! tr = intersection r' r
 
                     if Tree.contains set1 x then
-                        return! Tree.join tl x tr
+                        return! join (blackenRoot tl) x (blackenRoot tr)
                     else
-                        return! Tree.merge tl tr
+                        return! merge (blackenRoot tl) (blackenRoot tr)
         }
 
     let rec difference set1 set2 =
@@ -367,10 +305,10 @@ module RBSet =
             | Empty -> return Empty
             | _ ->
                 match set2 with
-                | Empty -> return Tree.blackenRoot set1
+                | Empty -> return blackenRoot set1
                 | Node(_, l, x, r) ->
-                    let! l', r' = Tree.split x set1
+                    let! l', r' = split x set1
                     let! tl = difference l' l
                     let! tr = difference r' r
-                    return! Tree.merge tl tr
+                    return! merge (blackenRoot tl) (blackenRoot tr)
         }
