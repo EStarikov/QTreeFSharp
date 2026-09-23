@@ -18,9 +18,8 @@ let main argv =
                typeof<QuadTree.Benchmarks.AVLSet.ParallelSetsBenchmark>
                typeof<QuadTree.Benchmarks.AVLSet.FSSetsBenchmark>
                typeof<QuadTree.Benchmarks.AVLSet.HashSetBenchmark>
-               typeof<QuadTree.Benchmarks.RedBlackSet.SingleOpsBenchmark> 
-               typeof<QuadTree.Benchmarks.RedBlackSet.SingleOpsBenchmark>
-               typeof<QuadTree.Benchmarks.RedBlackSet.FSSetsBenchmark> |]
+               typeof<QuadTree.Benchmarks.RedBlackSet.BatchOpsBenchmark>
+               typeof<QuadTree.Benchmarks.RedBlackSet.SetsBenchmark> |]
 
     benchmarks.Run argv |> ignore
     0
