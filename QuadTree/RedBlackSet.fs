@@ -7,8 +7,8 @@ type RBSetError = EmptyNodeWasNotExpected
 
 module Tree =
     type Color =
-    | Red
-    | Black
+        | Red
+        | Black
 
     type Tree<'T> =
         | Empty
@@ -258,7 +258,7 @@ module Tree =
 module RBSet =
     open Tree
 
-    type RBSet<'T> = Tree<'T> 
+    type RBSet<'T> = Tree<'T>
     let empty = Empty
 
     let add value set = Tree.insert set value
