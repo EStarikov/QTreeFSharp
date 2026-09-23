@@ -197,6 +197,37 @@ let emptySetProperties () =
     Assert.True(blackSonsOfRed t)
 
 [<Fact>]
+let emptyResultOfIntersection () =
+    let finalTree1 = empty |> add 4 |> Result.bind (add 7) |> Result.bind (add 14)
+
+    let finalTree2 = empty |> add 8 |> Result.bind (add 10) |> Result.bind (add 13)
+
+    match finalTree1, finalTree2 with
+    | Ok t1, Ok t2 ->
+        match intersection t1 t2 with
+        | Ok empty -> Assert.True(true)
+        | _ -> Assert.False(true)
+    | _ -> Assert.False(true)
+
+    match finalTree1 with
+    | Ok t ->
+        match intersection empty t with
+        | Ok empty -> Assert.True(true)
+        | _ -> Assert.False(true)
+    | _ -> Assert.False(true)
+
+[<Fact>]
+let emptyResultOfDifference () =
+    let finalTree1 = empty |> add 4 |> Result.bind (add 7) |> Result.bind (add 14)
+
+    match finalTree1 with
+    | Ok t ->
+        match difference empty t with
+        | Ok empty -> Assert.True(true)
+        | _ -> Assert.False(true)
+    | _ -> Assert.False(true)
+
+[<Fact>]
 let largeSetInsertion () =
     let rng = Random()
     let randomValues = [ for _ in 1..1000 -> rng.Next(-5000, 5000) ]
