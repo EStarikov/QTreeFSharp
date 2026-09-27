@@ -172,9 +172,20 @@ type SetsBenchmark() =
 
     [<GlobalSetup>]
     member self.Setup() =
-        let dataA = Array.init self.A (fun _ -> rnd.Next())
+        let smaller = min self.A self.B
+        let commonCount = int (float smaller * 0.25)
 
-        let dataB = Array.init self.B (fun _ -> rnd.Next())
+        let common = Array.init commonCount (fun _ -> rnd.Next())
+
+        let uniqueACount = self.A - commonCount
+        let uniqueBCount = self.B - commonCount
+
+        let uniqueA = Array.init uniqueACount (fun _ -> rnd.Next())
+
+        let uniqueB = Array.init uniqueBCount (fun _ -> rnd.Next())
+
+        let dataA = Array.append common uniqueA
+        let dataB = Array.append common uniqueB
 
         self.RedBlackSetA <-
             dataA
