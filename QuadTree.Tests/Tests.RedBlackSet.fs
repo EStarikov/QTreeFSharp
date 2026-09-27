@@ -31,12 +31,12 @@ let rec heightInv tree =
         else
             rH + 1
 
-let rec blackSonsOfRed tree =
+let rec blackChildrenOfRed tree =
     match tree with
     | Empty -> true
     | Node(Red, Node(Red, _, _, _), _, _)
     | Node(Red, _, _, Node(Red, _, _, _)) -> false
-    | Node(_, l, _, r) -> blackSonsOfRed l && blackSonsOfRed r
+    | Node(_, l, _, r) -> blackChildrenOfRed l && blackChildrenOfRed r
 
 let rec numOfElements tree num =
     match tree with
@@ -55,9 +55,9 @@ let oneElement () =
         Assert.True(contains 4 t)
         Assert.Equal(1, blHeightInv t)
         Assert.NotEqual(-1, heightInv t)
-        Assert.True(blackSonsOfRed t)
+        Assert.True(blackChildrenOfRed t)
         Assert.Equal(1, numOfElements t 0)
-    | Error e -> Assert.True(false, sprintf "Expect Ok, but get Error: %A" e)
+    | Error e -> Assert.Fail  $"Expect Ok, but get Error: {e}" 
 
 [<Fact>]
 let insertSomeElem () =
@@ -75,9 +75,9 @@ let insertSomeElem () =
         Assert.True(contains -7 t)
         Assert.Equal(2, blHeightInv t)
         Assert.NotEqual(-1, heightInv t)
-        Assert.True(blackSonsOfRed t)
+        Assert.True(blackChildrenOfRed t)
         Assert.Equal(6, numOfElements t 0)
-    | Error e -> Assert.True(false, sprintf "Expect Ok, but get Error: %A" e)
+    | Error e -> Assert.Fail $"Expect Ok, but get Error: {e}"
 
 [<Fact>]
 let deleteSomeElem () =
@@ -97,9 +97,9 @@ let deleteSomeElem () =
         Assert.False(contains 13 t)
         Assert.Equal(2, blHeightInv t)
         Assert.NotEqual(-1, heightInv t)
-        Assert.True(blackSonsOfRed t)
+        Assert.True(blackChildrenOfRed t)
         Assert.Equal(5, numOfElements t 0)
-    | Error e -> Assert.True(false, sprintf "Expect Ok, but get Error: %A" e)
+    | Error e -> Assert.Fail $"Expect Ok, but get Error: {e}"
 
 [<Fact>]
 let unionSets () =
@@ -125,10 +125,10 @@ let unionSets () =
         match union t1 t2 with
         | Ok tU ->
             Assert.NotEqual(-1, heightInv tU)
-            Assert.True(blackSonsOfRed tU)
+            Assert.True(blackChildrenOfRed tU)
             Assert.Equal(9, numOfElements tU 0)
-        | Error e -> Assert.True(false, sprintf "Error in union: %A" e)
-    | _ -> Assert.True(false, sprintf "Error in insert")
+        | Error e -> Assert.Fail $"Error in union: {e}"
+    | _ -> Assert.Fail $"Error in insert"
 
 [<Fact>]
 let intersectionSets () =
@@ -154,10 +154,10 @@ let intersectionSets () =
         match intersection t1 t2 with
         | Ok tI ->
             Assert.NotEqual(-1, heightInv tI)
-            Assert.True(blackSonsOfRed tI)
+            Assert.True(blackChildrenOfRed tI)
             Assert.Equal(2, numOfElements tI 0)
-        | Error e -> Assert.True(false, sprintf "Error in intersection: %A" e)
-    | _ -> Assert.True(false, sprintf "Error in insert")
+        | Error e -> Assert.Fail $"Error in intersection: {e}"
+    | _ -> Assert.Fail  $"Error in insert"
 
 [<Fact>]
 let differenceSets () =
@@ -183,10 +183,10 @@ let differenceSets () =
         match difference t1 t2 with
         | Ok tD ->
             Assert.NotEqual(-1, heightInv tD)
-            Assert.True(blackSonsOfRed tD)
+            Assert.True(blackChildrenOfRed tD)
             Assert.Equal(4, numOfElements tD 0)
-        | Error e -> Assert.True(false, sprintf "Error in difference: %A" e)
-    | _ -> Assert.True(false, sprintf "Error in insert")
+        | Error e -> Assert.Fail $"Error in difference: {e}"
+    | _ -> Assert.Fail $"Error in insert"
 
 [<Fact>]
 let emptySetProperties () =
@@ -194,7 +194,7 @@ let emptySetProperties () =
     Assert.False(contains 0 t)
     Assert.Equal(0, numOfElements t 0)
     Assert.Equal(0, blHeightInv t)
-    Assert.True(blackSonsOfRed t)
+    Assert.True(blackChildrenOfRed t)
 
 [<Fact>]
 let emptyResultOfIntersection () =
@@ -206,15 +206,15 @@ let emptyResultOfIntersection () =
     | Ok t1, Ok t2 ->
         match intersection t1 t2 with
         | Ok empty -> Assert.True(true)
-        | _ -> Assert.False(true)
-    | _ -> Assert.False(true)
+        | _ -> Assert.Fail $"expected Ok empty"
+    | _ -> Assert.Fail $"expexcted Ok"
 
     match finalTree1 with
     | Ok t ->
         match intersection empty t with
         | Ok empty -> Assert.True(true)
-        | _ -> Assert.False(true)
-    | _ -> Assert.False(true)
+        | _ -> Assert.Fail $"expected Ok empty"
+    | _ -> Assert.Fail $"expexcted Ok"
 
 [<Fact>]
 let emptyResultOfDifference () =
@@ -224,8 +224,8 @@ let emptyResultOfDifference () =
     | Ok t ->
         match difference empty t with
         | Ok empty -> Assert.True(true)
-        | _ -> Assert.False(true)
-    | _ -> Assert.False(true)
+        | _ -> Assert.Fail $"expected Ok empty"
+    | _ -> Assert.Fail $"expexcted Ok"
 
 [<Fact>]
 let largeSetInsertion () =
@@ -238,11 +238,11 @@ let largeSetInsertion () =
     match treeResult with
     | Ok tree ->
         Assert.NotEqual(-1, blHeightInv tree)
-        Assert.True(blackSonsOfRed tree)
+        Assert.True(blackChildrenOfRed tree)
 
         for x in randomValues do
             Assert.True(contains x tree)
-    | Error err -> Assert.True(false, sprintf "Error in insert: %A" err)
+    | Error e -> Assert.Fail $"Error in insert: {e}"
 
 [<Fact>]
 let deleteRoot () =
@@ -259,7 +259,7 @@ let deleteRoot () =
         Assert.True(contains 3 t)
         Assert.True(contains 7 t)
         Assert.NotEqual(-1, blHeightInv t)
-    | _ -> Assert.True(false, sprintf "Expect Ok, but get Error")
+    | _ -> Assert.Fail $"Expect Ok, but get Error"
 
 [<Fact>]
 let complexRedBlackViolations () =
@@ -271,8 +271,8 @@ let complexRedBlackViolations () =
     match treeResult with
     | Ok tree ->
         Assert.NotEqual(-1, blHeightInv tree)
-        Assert.True(blackSonsOfRed tree)
-    | Error err -> Assert.True(false, sprintf "Error in insert: %A" err)
+        Assert.True(blackChildrenOfRed tree)
+    | Error e -> Assert.Fail $"Error in insert: {e}"
 
 [<Fact>]
 let randomDeletions () =
@@ -296,7 +296,7 @@ let randomDeletions () =
         | Ok t ->
             Assert.NotEqual(-1, blHeightInv t)
             Assert.NotEqual(-1, heightInv t)
-            Assert.True(blackSonsOfRed t)
+            Assert.True(blackChildrenOfRed t)
 
             for x in deleteValues do
                 Assert.False(contains x t, sprintf "Element %d should be deleted" x)
@@ -305,8 +305,8 @@ let randomDeletions () =
                 Assert.True(contains x t, sprintf "Element %d should be present" x)
 
             Assert.Equal(remaining.Length, numOfElements t 0)
-        | Error err -> Assert.True(false, sprintf "Error in delete: %A" err)
-    | Error err -> Assert.True(false, sprintf "Error in insert: %A" err)
+        | Error e -> Assert.Fail $"Error in delete: {e}"
+    | Error e -> Assert.Fail $"Error in insert: {e}"
 
 [<Fact>]
 let randomDeletionsOfMissingElements () =
@@ -327,7 +327,7 @@ let randomDeletionsOfMissingElements () =
         | Ok t ->
             Assert.NotEqual(-1, blHeightInv t)
             Assert.NotEqual(-1, heightInv t)
-            Assert.True(blackSonsOfRed t)
+            Assert.True(blackChildrenOfRed t)
 
             let expected = insertValues |> List.distinct
 
@@ -338,8 +338,8 @@ let randomDeletionsOfMissingElements () =
                 Assert.False(contains x t, sprintf "Element %d should not be present" x)
 
             Assert.Equal(expected.Length, numOfElements t 0)
-        | Error err -> Assert.True(false, sprintf "Error in delete: %A" err)
-    | Error err -> Assert.True(false, sprintf "Error in insert: %A" err)
+        | Error e -> Assert.Fail $"Error in delete: {e}"
+    | Error e -> Assert.Fail $"Error in insert: {e}"
 
 [<Fact>]
 let randomUnion () =
@@ -359,7 +359,7 @@ let randomUnion () =
         | Ok tU ->
             Assert.NotEqual(-1, blHeightInv tU)
             Assert.NotEqual(-1, heightInv tU)
-            Assert.True(blackSonsOfRed tU)
+            Assert.True(blackChildrenOfRed tU)
 
             let expected = (vals1 @ vals2) |> List.distinct
 
@@ -367,8 +367,8 @@ let randomUnion () =
                 Assert.True(contains x tU, sprintf "Element %d should be in union" x)
 
             Assert.Equal(expected.Length, numOfElements tU 0)
-        | Error e -> Assert.True(false, sprintf "Error in union: %A" e)
-    | _ -> Assert.True(false, "Error in insert")
+        | Error e -> Assert.Fail $"Error in union: {e}"
+    | _ -> Assert.Fail $"Error in insert"
 
 [<Fact>]
 let randomIntersection () =
@@ -388,7 +388,7 @@ let randomIntersection () =
         | Ok tI ->
             Assert.NotEqual(-1, blHeightInv tI)
             Assert.NotEqual(-1, heightInv tI)
-            Assert.True(blackSonsOfRed tI)
+            Assert.True(blackChildrenOfRed tI)
 
             let set1 = vals1 |> Set.ofList
             let set2 = vals2 |> Set.ofList
@@ -403,8 +403,8 @@ let randomIntersection () =
                 Assert.False(contains x tI, sprintf "Element %d should not be in intersection" x)
 
             Assert.Equal(expected.Count, numOfElements tI 0)
-        | Error e -> Assert.True(false, sprintf "Error in intersection: %A" e)
-    | _ -> Assert.True(false, "Error in insert")
+        | Error e -> Assert.Fail $"Error in intersection: {e}"
+    | _ -> Assert.Fail $"Error in insert"
 
 [<Fact>]
 let randomDifference () =
@@ -424,7 +424,7 @@ let randomDifference () =
         | Ok tD ->
             Assert.NotEqual(-1, blHeightInv tD)
             Assert.NotEqual(-1, heightInv tD)
-            Assert.True(blackSonsOfRed tD)
+            Assert.True(blackChildrenOfRed tD)
 
             let set1 = vals1 |> Set.ofList
             let set2 = vals2 |> Set.ofList
@@ -437,8 +437,8 @@ let randomDifference () =
                 Assert.False(contains x tD, sprintf "Element %d should not be in difference" x)
 
             Assert.Equal(expected.Count, numOfElements tD 0)
-        | Error e -> Assert.True(false, sprintf "Error in difference: %A" e)
-    | _ -> Assert.True(false, "Error in insert")
+        | Error e -> Assert.Fail $"Error in difference: {e}"
+    | _ -> Assert.Fail $"Error in insert"
 
 [<Fact>]
 let randomMixedOperations () =
@@ -478,9 +478,9 @@ let randomMixedOperations () =
     | Ok final ->
         Assert.NotEqual(-1, blHeightInv final)
         Assert.NotEqual(-1, heightInv final)
-        Assert.True(blackSonsOfRed t1)
-        Assert.True(blackSonsOfRed t2)
-        Assert.True(blackSonsOfRed final)
+        Assert.True(blackChildrenOfRed t1)
+        Assert.True(blackChildrenOfRed t2)
+        Assert.True(blackChildrenOfRed final)
 
         for x in toDelete do
             Assert.False(contains x final, sprintf "Deleted element %d found" x)
@@ -491,4 +491,4 @@ let randomMixedOperations () =
             Assert.True(contains x final, sprintf "Element %d should be present" x)
 
         Assert.Equal(expectedRemaining.Length, numOfElements final 0)
-    | Error e -> Assert.True(false, sprintf "Error in mixed ops: %A" e)
+    | Error e -> Assert.Fail $"Error in mixed ops: {e}"
