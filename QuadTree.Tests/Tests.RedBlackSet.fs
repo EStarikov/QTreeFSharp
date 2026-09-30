@@ -57,7 +57,7 @@ let oneElement () =
         Assert.NotEqual(-1, heightInv t)
         Assert.True(blackChildrenOfRed t)
         Assert.Equal(1, numOfElements t 0)
-    | Error e -> Assert.Fail  $"Expect Ok, but get Error: {e}" 
+    | Error e -> Assert.Fail $"Expect Ok, but get Error: {e}"
 
 [<Fact>]
 let insertSomeElem () =
@@ -157,7 +157,7 @@ let intersectionSets () =
             Assert.True(blackChildrenOfRed tI)
             Assert.Equal(2, numOfElements tI 0)
         | Error e -> Assert.Fail $"Error in intersection: {e}"
-    | _ -> Assert.Fail  $"Error in insert"
+    | _ -> Assert.Fail $"Error in insert"
 
 [<Fact>]
 let differenceSets () =
